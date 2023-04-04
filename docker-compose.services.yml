@@ -1,0 +1,44 @@
+version: "3.5"
+
+x-common-variables: &common-variables
+  POSTGRES_DB: nft
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_PORT: 5432
+  POSTGRES_HOST: db
+
+services:
+  ########################### External Services ################################
+  # ----------------------------------------------------------------------------
+  # Setup the local postgres database.
+  #
+  postgres:
+    image: postgres:alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - "pg_data:/data"
+    environment: *common-variables
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d nft" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      close:
+        aliases:
+          - postgres
+
+# ----------------------------------------------------------------------------
+# Networking
+#
+networks:
+  close:
+    driver: bridge
+
+# ----------------------------------------------------------------------------
+# Volume Mounts
+#
+volumes:
+  pg_data:
