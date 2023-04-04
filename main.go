@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/oauth"
@@ -23,7 +24,17 @@ func main() {
 	log.Printf("Port: %s", config.Port)
 	log.Printf("DebugMode: %t", config.DebugMode)
 
-	db := db.NewDB()
+	migrations := db.NewMigrations(config.DSN)
+	err := migrations.Up(context.TODO())
+	if err != nil {
+		log.Fatal("Error applying migrations")
+	}
+
+	db, err := db.NewDB(config.DSN)
+	if err != nil {
+		log.Fatal("error configuring DB", err)
+	}
+
 	imx := imx.NewIMX(config.AlchemyAPIKey, config.L1SignerPrivateKey, config.StarkPrivateKey)
 	defer imx.Close()
 
@@ -61,7 +72,7 @@ func main() {
 		})
 	})
 
-	err := http.ListenAndServe(":"+config.Port, r)
+	err = http.ListenAndServe(":"+config.Port, r)
 	if err != nil {
 		log.Fatal("error stopping web server", err)
 	}

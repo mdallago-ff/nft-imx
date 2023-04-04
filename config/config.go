@@ -12,6 +12,7 @@ type Settings struct {
 	AlchemyAPIKey      string `default:"" env:"ALCHEMY_API_KEY"`
 	L1SignerPrivateKey string `default:"" env:"L1_SIGNER_PRIVATE_KEY"`
 	StarkPrivateKey    string `default:"" env:"STARK_PRIVATE_KEY"`
+	DSN                string `default:"" env:"DSN"`
 }
 
 var config = Settings{}
