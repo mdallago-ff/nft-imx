@@ -1,0 +1,79 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.19'
+          
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          args: -v
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
+      - name: Setup database
+        run: psql -h localhost -U postgres -c 'CREATE DATABASE "nft";'
+        env:
+          PGPASSWORD: postgres
+
+      - name: Lint
+        run: make lint.ci
+
+      - name: Build
+        run: make setup
+
+      - name: Test
+        run: make test.ci
+        env:
+          DB_DSN: "host=localhost user=postgres password=postgres dbname=nft port=5432 sslmode=disable"
+
+      - name: Test coverage check
+        env:
+          TEST_COVERAGE_THRESHOLD: 50
+        run: |
+          echo "Checking test coverage is above threshold ..."
+          echo "Threshold             : $TEST_COVERAGE_THRESHOLD %"
+          totalCoverage=`make test.coverage.percent`
+          echo "Current test coverage : $totalCoverage %"
+          if (( $(echo "$totalCoverage $TEST_COVERAGE_THRESHOLD" | awk '{print ($1 > $2)}') )); then
+              echo "OK"
+          else
+              echo "Current test coverage is below threshold. Please add more unit tests or adjust threshold to a lower value."
+              echo "Failed"
+              exit 1
+          fi
+
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "bc-orc/test-report.xml"
+        if: always()
