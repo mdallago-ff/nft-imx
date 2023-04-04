@@ -46,35 +46,23 @@ start:
 #🧪 test.cleanup: @ Removes all artifacts possibly left behind from previous testing
 test.cleanup: SHELL:=/bin/bash
 test.cleanup:
-	@rm -f test-report.xml greppedErrors.out coverage.out 2> /dev/null || true
+	@rm -f test-report.xml 2> /dev/null || true
 
 #🧪 test: @ Runs all test suites
 test: SHELL:=/bin/bash
 test: test.cleanup
-	@godotenv -f ./.env go test -count=1 -v ./...  | tee >(grep -i -e "Unexpected Method Call" > greppedErrors.out)
-	@cat greppedErrors.out
-
-#🧪 test.cover: @ Runs all tests to measure and report test coverage
-test.cover: SHELL:=/bin/bash
-test.cover: test.cleanup
-	@godotenv -f ./.env go test -covermode=count -coverprofile coverage.out -count=1 -v ./...
-	@go tool cover -html=coverage.out
+	@godotenv -f ./.env go test -count=1 -v ./...
 
 #🧪 test.report: @ Runs all test suites and creates a test report
 test.report: SHELL:=/bin/bash
 test.report: test.cleanup
-	@godotenv -f ./.env go test -covermode=count -coverprofile coverage.out -count=1 -v ./... | go-junit-report -iocopy -out test-report.xml
+	@godotenv -f ./.env go test -count=1 -v ./... | go-junit-report -iocopy -out test-report.xml
 	@./render-report.sh test-report.xml test-report.html
-	@grep -i -e "Unexpected Method Call" test-report.xml
-
-test.coverage.percent: SHELL:=/bin/bash
-test.coverage.percent:
-	@go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+'
 
 #🧪 test.ci: @ Runs all test suites
 test.ci: SHELL:=/bin/bash
 test.ci:
-	@./test-ci.sh
+	@go test -count=1 -v ./... | go-junit-report -set-exit-code -iocopy -out test-report.xml
 
 #🐳 docker.build: @ Builds a new local docker image
 docker.build: SHELL:=/bin/bash
