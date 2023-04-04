@@ -57,5 +57,8 @@ func main() {
 		})
 	})
 
-	http.ListenAndServe(":"+config.Port, r)
+	err := http.ListenAndServe(":"+config.Port, r)
+	if err != nil {
+		log.Fatal("error stopping web server", err)
+	}
 }

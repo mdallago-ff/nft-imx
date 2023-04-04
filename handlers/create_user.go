@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
 	"net/http"
@@ -11,7 +12,10 @@ import (
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	data := &UserRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
 		return
 	}
 
@@ -23,7 +27,10 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	//h.db.CreateUser()
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, NewUserResponse(user))
+	err := render.Render(w, r, NewUserResponse(user))
+	if err != nil {
+		log.Error("error rendering response", err)
+	}
 }
 
 type UserRequest struct {
