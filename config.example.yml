@@ -1,0 +1,6 @@
+port: 4000
+authsecret: "XXXXXX"
+debugmode: true
+alchemyapikey: "XXXXXXXXXXXXXXXXXX"
+l1signerprivatekey: "XXXXXXXXXXXXXXXXXX"
+starkprivatekey: "XXXXXXXXXXXXXXXXXX"

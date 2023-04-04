@@ -86,7 +86,7 @@ docker.run: TAG:=latest
 docker.run: ENTRYPOINT:=./nft-imx
 docker.run:
 	@echo "🐳‍💻  Running a local docker image"
-	@docker run --entrypoint "${ENTRYPOINT}" --name=nft-imx -p $(REQUESTS_SERVICE_PORT):4000 nft-imx:$(TAG)
+	@docker run --env-file ./.env --entrypoint "${ENTRYPOINT}" --name=nft-imx -p $(REQUESTS_SERVICE_PORT):4000 nft-imx:$(TAG)
 
 #🐳 services.start: @ Starts docker services, requires a local authz image
 services.start: SHELL:=/bin/bash
@@ -117,4 +117,4 @@ nft.stop: SHELL:=/bin/bash
 nft.stop: DOCKER_COMPOSE_FILE:=docker-compose.nft.yml
 nft.stop:
 	@echo "🐳‍👁️  Removing docker-compose services"
-	@source .env && docker-compose -f $(DOCKER_COMPOSE_FILE) -p "nft-imx" stop && docker-compose -f $(DOCKER_COMPOSE_FILE) -p "nft-imx" down -v --remove-orphans
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) -p "nft-imx" stop && docker-compose -f $(DOCKER_COMPOSE_FILE) -p "nft-imx" down -v --remove-orphans

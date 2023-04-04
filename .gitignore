@@ -25,3 +25,6 @@ release/
 
 /config.yml
 /nft
+
+.env
+

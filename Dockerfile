@@ -12,7 +12,7 @@ RUN apk add --no-cache build-base git curl wget libressl-dev openssh
 
 WORKDIR /app
 
-# Copy everything (this will include the generated structs)
+# Copy everything
 COPY ${NAME}/. .
 
 # Download Go mods

@@ -19,6 +19,10 @@ func main() {
 	log.Println("Starting NFT Marketplace")
 
 	config := config.GetConfig()
+
+	log.Printf("Port: %s", config.Port)
+	log.Printf("DebugMode: %t", config.DebugMode)
+
 	db := db.NewDB()
 	imx := imx.NewIMX(config.AlchemyAPIKey, config.L1SignerPrivateKey, config.StarkPrivateKey)
 	defer imx.Close()
