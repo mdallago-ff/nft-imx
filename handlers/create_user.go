@@ -19,15 +19,42 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := data.User
+
+	u, err := h.db.GetUserByMail(user.Mail)
+	if err != nil {
+		log.Error("error getting user", err)
+		err = render.Render(w, r, ErrServer(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	if u != nil {
+		err = render.Render(w, r, ErrInvalidRequest(errors.New("not allowed")))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	user.ID = uuid.New()
+	user.ApiKey = uuid.NewString()
+	err = h.db.CreateUser(user)
+	if err != nil {
+		log.Error("error saving user", err)
+		err = render.Render(w, r, ErrServer(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
 	//h.imx.CreateUser()
 
-	user := data.User
-	user.ID = uuid.NewString()
-	user.ApiKey = uuid.NewString()
-	//h.db.CreateUser()
-
 	render.Status(r, http.StatusCreated)
-	err := render.Render(w, r, NewUserResponse(user))
+	err = render.Render(w, r, NewUserResponse(user))
 	if err != nil {
 		log.Error("error rendering response", err)
 	}

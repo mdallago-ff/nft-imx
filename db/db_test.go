@@ -59,6 +59,27 @@ func (s *UnitTestSuite) TestCreateUser() {
 	s.Assertions.Equal(user, newUser)
 }
 
+func (s *UnitTestSuite) TestGetUserByMail() {
+	mail := "test@test.com"
+	user, err := s.db.GetUserByMail(mail)
+	s.Assertions.Nil(err)
+	s.Assertions.Nil(user)
+
+	newUser := &models.User{
+		ID:     uuid.New(),
+		ApiKey: uuid.NewString(),
+		Mail:   mail,
+	}
+
+	err = s.db.CreateUser(newUser)
+	s.Assertions.Nil(err)
+
+	user, err = s.db.GetUserByMail(mail)
+	s.Assertions.Nil(err)
+	s.Assertions.NotNil(user)
+	s.Assertions.Equal(user, newUser)
+}
+
 func TestUnitTestSuite(t *testing.T) {
 	suite.Run(t, new(UnitTestSuite))
 }

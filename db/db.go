@@ -46,3 +46,17 @@ func (d *DB) GetUser(id uuid.UUID) (*models.User, error) {
 
 	return &user, nil
 }
+
+func (d *DB) GetUserByMail(mail string) (*models.User, error) {
+	var user models.User
+	if err := d.db.Where("mail = ?", mail).First(&user).Error; err != nil {
+		switch err {
+		case gorm.ErrRecordNotFound:
+			return nil, nil
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}

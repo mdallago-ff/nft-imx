@@ -54,14 +54,14 @@ func main() {
 		nil)
 	r.Post("/auth", s.ClientCredentials)
 
+	r.Route("/users", func(r chi.Router) {
+		r.Post("/", handlers.CreateUser)
+	})
+
 	r.Group(func(r chi.Router) {
 		if !config.DebugMode {
 			r.Use(oauth.Authorize(config.AuthSecret, nil))
 		}
-
-		r.Route("/users", func(r chi.Router) {
-			r.Post("/", handlers.CreateUser)
-		})
 
 		r.Route("/collections", func(r chi.Router) {
 			r.Post("/", handlers.CreateCollection)
