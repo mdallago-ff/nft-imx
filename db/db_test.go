@@ -26,7 +26,8 @@ func (s *UnitTestSuite) SetupTest() {
 }
 
 func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
-	s.migrations.Down(context.Background())
+	err := s.migrations.Down(context.Background())
+	s.Assertions.Nil(err)
 }
 
 func (s *UnitTestSuite) TestGetUser() {

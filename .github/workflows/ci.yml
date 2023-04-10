@@ -24,7 +24,7 @@ jobs:
       postgres:
         image: postgres
         env:
-          POSTGRES_TEST_DB: nft
+          POSTGRES_TEST_DB: nft_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         options: >-
@@ -56,7 +56,7 @@ jobs:
           sudo apt-get install --yes postgresql-client
 
       - name: Setup database
-        run: psql -h localhost -U postgres -c 'CREATE DATABASE "nft";'
+        run: psql -h localhost -U postgres -c 'CREATE DATABASE "nft_test";'
         env:
           PGPASSWORD: postgres
 
