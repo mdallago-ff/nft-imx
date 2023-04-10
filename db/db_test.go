@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
+	"nft/models"
 	"testing"
 )
 
@@ -35,6 +36,27 @@ func (s *UnitTestSuite) TestGetUser() {
 	user, err := s.db.GetUser(id)
 	s.Assertions.Nil(err)
 	s.Assertions.Nil(user)
+}
+
+func (s *UnitTestSuite) TestCreateUser() {
+	id := uuid.New()
+	user, err := s.db.GetUser(id)
+	s.Assertions.Nil(err)
+	s.Assertions.Nil(user)
+
+	newUser := &models.User{
+		ID:     id,
+		ApiKey: uuid.NewString(),
+		Mail:   "test@test.com",
+	}
+
+	err = s.db.CreateUser(newUser)
+	s.Assertions.Nil(err)
+
+	user, err = s.db.GetUser(id)
+	s.Assertions.Nil(err)
+	s.Assertions.NotNil(user)
+	s.Assertions.Equal(user, newUser)
 }
 
 func TestUnitTestSuite(t *testing.T) {
