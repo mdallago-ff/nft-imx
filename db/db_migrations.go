@@ -21,8 +21,8 @@ type Migrations struct {
 type gooseFunc func(db *sql.DB, dir string, opts ...goose.OptionsFunc) error
 
 // NewMigrations constructs Migration
-func NewMigrations(dsn string) Migrations {
-	return Migrations{dsn: dsn}
+func NewMigrations(dsn string) *Migrations {
+	return &Migrations{dsn: dsn}
 }
 
 // Up Migrate the DB to the most recent version available

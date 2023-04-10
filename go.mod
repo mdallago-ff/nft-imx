@@ -21,6 +21,7 @@ require (
 	github.com/aarbt/hdkeys v0.0.0-20151205172415-ee76d77aba2f // indirect
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.1 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/dontpanicdao/caigo v0.4.1 // indirect
@@ -36,9 +37,12 @@ require (
 	github.com/jackc/pgx/v5 v5.3.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/runeaune/bitcoin-base58 v0.0.0-20151205172436-67fa270fe8dd // indirect
 	github.com/runeaune/bitcoin-crypto v0.0.0-20151230101850-703c6210df67 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/testify v1.8.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.5.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
@@ -47,4 +51,5 @@ require (
 	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

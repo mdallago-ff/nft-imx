@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"nft/models"
@@ -30,4 +31,18 @@ func (d *DB) CreateUser(user *models.User) error {
 
 		return nil
 	})
+}
+
+func (d *DB) GetUser(id uuid.UUID) (*models.User, error) {
+	var user models.User
+	if err := d.db.First(&user, id).Error; err != nil {
+		switch err {
+		case gorm.ErrRecordNotFound:
+			return nil, nil
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
 }
