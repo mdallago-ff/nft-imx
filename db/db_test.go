@@ -38,17 +38,24 @@ func (s *UnitTestSuite) TestGetUser() {
 	s.Assertions.Nil(user)
 }
 
+func (s *UnitTestSuite) createDummyUser(id uuid.UUID, mail string) *models.User {
+	return &models.User{
+		ID:      id,
+		ApiKey:  uuid.NewString(),
+		Mail:    mail,
+		Private: "",
+		Public:  "",
+		Address: "",
+	}
+}
+
 func (s *UnitTestSuite) TestCreateUser() {
 	id := uuid.New()
 	user, err := s.db.GetUser(id)
 	s.Assertions.Nil(err)
 	s.Assertions.Nil(user)
 
-	newUser := &models.User{
-		ID:     id,
-		ApiKey: uuid.NewString(),
-		Mail:   "test@test.com",
-	}
+	newUser := s.createDummyUser(id, "test@test.com")
 
 	err = s.db.CreateUser(newUser)
 	s.Assertions.Nil(err)
@@ -57,6 +64,31 @@ func (s *UnitTestSuite) TestCreateUser() {
 	s.Assertions.Nil(err)
 	s.Assertions.NotNil(user)
 	s.Assertions.Equal(user, newUser)
+}
+
+func (s *UnitTestSuite) TestUpdateUser() {
+	id := uuid.New()
+	user, err := s.db.GetUser(id)
+	s.Assertions.Nil(err)
+	s.Assertions.Nil(user)
+
+	newUser := s.createDummyUser(id, "test@test.com")
+	err = s.db.CreateUser(newUser)
+	s.Assertions.Nil(err)
+
+	user, err = s.db.GetUser(id)
+	s.Assertions.Nil(err)
+	s.Assertions.NotNil(user)
+	s.Assertions.Equal(user.StarkKey, "")
+
+	user.StarkKey = "random key"
+	err = s.db.UpdateUser(user)
+	s.Assertions.Nil(err)
+
+	user, err = s.db.GetUser(id)
+	s.Assertions.Nil(err)
+	s.Assertions.NotNil(user)
+	s.Assertions.Equal(user.StarkKey, "random key")
 }
 
 func (s *UnitTestSuite) TestGetUserByMail() {

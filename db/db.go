@@ -33,6 +33,17 @@ func (d *DB) CreateUser(user *models.User) error {
 	})
 }
 
+func (d *DB) UpdateUser(user *models.User) error {
+	//save database
+	return d.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Updates(&user).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func (d *DB) GetUser(id uuid.UUID) (*models.User, error) {
 	var user models.User
 	if err := d.db.First(&user, id).Error; err != nil {

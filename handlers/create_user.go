@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
 	"net/http"
+	"nft/keys"
 	"nft/models"
 )
 
@@ -19,9 +21,9 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := data.User
+	mail := data.Mail
 
-	u, err := h.db.GetUserByMail(user.Mail)
+	u, err := h.db.GetUserByMail(mail)
 	if err != nil {
 		log.Error("error getting user", err)
 		err = render.Render(w, r, ErrServer(err))
@@ -31,64 +33,80 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if u != nil {
-		err = render.Render(w, r, ErrInvalidRequest(errors.New("not allowed")))
+	if u == nil {
+		pair, err := keys.CreateKeys()
 		if err != nil {
-			log.Error("error rendering response", err)
+			err = render.Render(w, r, ErrInvalidRequest(errors.New("not allowed")))
+			if err != nil {
+				log.Error("error rendering response", err)
+			}
+			return
 		}
-		return
+
+		user := models.User{}
+		user.ID = uuid.New()
+		user.ApiKey = uuid.NewString()
+		user.Mail = mail
+		user.Private = pair.Private //TODO do not store private keys in plain text. We must use a vault or similar.
+		user.Public = pair.Public
+		user.Address = pair.Address
+
+		err = h.db.CreateUser(&user)
+		if err != nil {
+			log.Error("error saving user", err)
+			err = render.Render(w, r, ErrServer(err))
+			if err != nil {
+				log.Error("error rendering response", err)
+			}
+			return
+		}
+		u = &user
 	}
 
-	user.ID = uuid.New()
-	user.ApiKey = uuid.NewString()
-	err = h.db.CreateUser(user)
-	if err != nil {
-		log.Error("error saving user", err)
-		err = render.Render(w, r, ErrServer(err))
+	if len(u.StarkKey) == 0 {
+		starkKey, err := h.imx.CreateUser(context.TODO(), u)
 		if err != nil {
-			log.Error("error rendering response", err)
+			log.Error("error creating user", err)
+			err = render.Render(w, r, ErrServer(err))
+			if err != nil {
+				log.Error("error rendering response", err)
+			}
+			return
 		}
-		return
-	}
 
-	//h.imx.CreateUser()
+		u.StarkKey = starkKey
+		err = h.db.UpdateUser(u)
+		if err != nil {
+			log.Error("error saving user", err)
+			err = render.Render(w, r, ErrServer(err))
+			if err != nil {
+				log.Error("error rendering response", err)
+			}
+			return
+		}
+	}
 
 	render.Status(r, http.StatusCreated)
-	err = render.Render(w, r, NewUserResponse(user))
+	err = render.Render(w, r, NewUserResponse(u))
 	if err != nil {
 		log.Error("error rendering response", err)
 	}
 }
 
 type UserRequest struct {
-	*models.User
+	Mail string
 }
 
 func (a *UserRequest) Bind(r *http.Request) error {
-	// a.Article is nil if no Article fields are sent in the request. Return an
-	// error to avoid a nil pointer dereference.
-	if a.User == nil {
+	if len(a.Mail) == 0 {
 		return errors.New("missing required fields")
 	}
 
-	// a.User is nil if no Userpayload fields are sent in the request. In this app
-	// this won't cause a panic, but checks in this Bind method may be required if
-	// a.User or futher nested fields like a.User.Name are accessed elsewhere.
-
-	// just a post-process after a decode..
-	//a.ProtectedID = ""                                 // unset the protected ID
-	//a.Article.Title = strings.ToLower(a.Article.Title) // as an example, we down-case
 	return nil
 }
 
 type UserResponse struct {
 	*models.User
-
-	//User *UserPayload `json:"user,omitempty"`
-
-	// We add an additional field to the response here.. such as this
-	// elapsed computed property
-	//Elapsed int64 `json:"elapsed"`
 }
 
 func NewUserResponse(user *models.User) *UserResponse {

@@ -8,12 +8,15 @@ import (
 	"github.com/immutable/imx-core-sdk-golang/imx/signers/ethereum"
 	"github.com/immutable/imx-core-sdk-golang/imx/signers/stark"
 	"log"
+	"math/big"
+	"nft/models"
 )
 
 type IMX struct {
 	client   *imx.Client
 	l1signer imx.L1Signer
 	l2signer imx.L2Signer
+	chainId  *big.Int
 }
 
 func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey string) *IMX {
@@ -33,30 +36,37 @@ func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey str
 		log.Panicf("error in creating L1Signer: %v\n", err)
 	}
 
-	l2signer := newStarkSigner(starkPrivateKey)
+	l2signer, _ := newStarkSigner(starkPrivateKey)
 
-	return &IMX{client, l1signer, l2signer}
+	return &IMX{client, l1signer, l2signer, cfg.ChainID}
 }
 
-func (i *IMX) CreateUser(ctx context.Context, email string) error {
-	response, err := i.client.RegisterOffchain(ctx, i.l1signer, i.l2signer, email)
+func (i *IMX) CreateUser(ctx context.Context, user *models.User) (string, error) {
+	l1signer, err := ethereum.NewSigner(user.Private, i.chainId)
 	if err != nil {
-		return err
+		log.Panicf("error in creating L1Signer: %v\n", err)
+	}
+
+	l2signer, starkKey := newStarkSigner("")
+
+	response, err := i.client.RegisterOffchain(ctx, l1signer, l2signer, user.Mail)
+	if err != nil {
+		return "", err
 	}
 
 	val, err := prettyStruct(response)
 	if err != nil {
-		return err
+		return "", err
 	}
 	log.Println("RegisterOffchain response: ", val)
 
 	// Get the accounts registered on offchain.
-	usersResponse, err := i.client.GetUsers(ctx, i.l1signer.GetAddress())
+	usersResponse, err := i.client.GetUsers(ctx, l1signer.GetAddress())
 	if err != nil {
-		return err
+		return "", err
 	}
 	log.Println("Registered accounts: ", usersResponse.GetAccounts())
-	return nil
+	return starkKey, nil
 }
 
 func (i *IMX) Close() {
@@ -96,7 +106,7 @@ type CreateDeposit struct {
 	DepositAmountWei string
 }
 
-func newStarkSigner(privateStarkKeyStr string) imx.L2Signer {
+func newStarkSigner(privateStarkKeyStr string) (imx.L2Signer, string) {
 	var err error
 	if privateStarkKeyStr == "" {
 		privateStarkKeyStr, err = stark.GenerateKey()
@@ -110,7 +120,7 @@ func newStarkSigner(privateStarkKeyStr string) imx.L2Signer {
 	if err != nil {
 		log.Panicf("error in creating StarkSigner: %v\n", err)
 	}
-	return l2signer
+	return l2signer, privateStarkKeyStr
 }
 
 func prettyStruct(data interface{}) (string, error) {
