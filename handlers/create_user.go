@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-chi/render"
@@ -64,7 +63,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(u.StarkKey) == 0 {
-		starkKey, err := h.imx.CreateUser(context.TODO(), u)
+		starkKey, err := h.imx.CreateUser(r.Context(), u)
 		if err != nil {
 			log.Error("error creating user", err)
 			err = render.Render(w, r, ErrServer(err))

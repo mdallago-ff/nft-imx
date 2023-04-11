@@ -5,3 +5,4 @@ alchemyapikey: "XXXXXXXXXXXXXXXXXX"
 l1signerprivatekey: "XXXXXXXXXXXXXXXXXX"
 starkprivatekey: "XXXXXXXXXXXXXXXXXX"
 dsn: "host=localhost user=postgres password=postgres dbname=nft port=5432 sslmode=disable"
+projectid: 1234

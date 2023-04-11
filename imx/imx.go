@@ -10,6 +10,7 @@ import (
 	"log"
 	"math/big"
 	"nft/models"
+	"strconv"
 )
 
 type IMX struct {
@@ -44,7 +45,7 @@ func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey str
 func (i *IMX) CreateUser(ctx context.Context, user *models.User) (string, error) {
 	l1signer, err := ethereum.NewSigner(user.Private, i.chainId)
 	if err != nil {
-		log.Panicf("error in creating L1Signer: %v\n", err)
+		return "", err
 	}
 
 	l2signer, starkKey := newStarkSigner("")
@@ -131,30 +132,62 @@ func prettyStruct(data interface{}) (string, error) {
 	return string(val), nil
 }
 
-//func createProject(c *imx.Client, l1signer imx.L1Signer, info *ProjectInformation) {
-//	ctx := context.TODO()
-//	response, err := c.CreateProject(ctx, l1signer, info.ProjectName, info.CompanyName, info.ContactEmail)
-//	if err != nil {
-//		log.Panicf("error in CreateProject: %v\n", err)
-//	}
-//
-//	val, err := json.MarshalIndent(response, "", "    ")
-//	if err != nil {
-//		log.Panicf("error in json marshaling: %v\n", err)
-//	}
-//	log.Println("Created new project, response: ", string(val))
-//
-//	// Get the project details we just created.
-//	projectReponse, err := c.GetProject(ctx, l1signer, strconv.FormatInt(int64(response.Id), 10))
-//	if err != nil {
-//		log.Panicf("error in GetProject: %v", err)
-//	}
-//	val, err = json.MarshalIndent(projectReponse, "", "    ")
-//	if err != nil {
-//		log.Panicf("error in json marshaling: %v\n", err)
-//	}
-//	log.Println("Project details: ", string(val))
-//}
+func (i *IMX) CreateProject(ctx context.Context, info *ProjectInformation) (int32, error) {
+	response, err := i.client.CreateProject(ctx, i.l1signer, info.ProjectName, info.CompanyName, info.ContactEmail)
+	if err != nil {
+		return -1, err
+	}
+
+	val, err := prettyStruct(response)
+	if err != nil {
+		return -1, err
+	}
+
+	log.Println("Created new project, response: ", val)
+
+	// Get the project details we just created.
+	projectResponse, err := i.client.GetProject(ctx, i.l1signer, strconv.FormatInt(int64(response.Id), 10))
+	if err != nil {
+		return -1, err
+	}
+	val, err = prettyStruct(projectResponse)
+	if err != nil {
+		return -1, err
+	}
+
+	log.Println("Project details: ", val)
+	return response.Id, nil
+}
+
+func (i *IMX) CreateCollection(ctx context.Context, info *CollectionInformation) error {
+	createCollectionRequest := api.NewCreateCollectionRequest(info.ContractAddress,
+		info.CollectionName,
+		info.PublicKey,
+		info.ProjectID)
+
+	createCollectionRequest.MetadataApiUrl = &info.MetadataUrl
+
+	response, err := i.client.CreateCollection(ctx, i.l1signer, createCollectionRequest)
+	if err != nil {
+		return err
+	}
+
+	val, err := prettyStruct(response)
+	if err != nil {
+		return err
+	}
+	log.Println("Created new collection, response: ", val)
+
+	// Get the collection details we just created.
+	collectionReponse, err := i.client.GetCollection(ctx, info.ContractAddress)
+	if err != nil {
+		return err
+	}
+	log.Println("Created Collection Name: ", collectionReponse.Name)
+
+	return nil
+}
+
 //
 //func trimHexPrefix(hexString string) (string, error) {
 //	if len(hexString) < 2 {
@@ -208,34 +241,7 @@ func prettyStruct(data interface{}) (string, error) {
 //	log.Println("Created Collection Name: ", collectionReponse.Name)
 //}
 //
-//func createCollection(c *imx.Client, l1signer imx.L1Signer, info *CollectionInformation) {
-//	ctx := context.TODO()
-//
-//	createCollectionRequest := api.NewCreateCollectionRequest(info.ContractAddress,
-//		info.CollectionName,
-//		info.PublicKey,
-//		info.ProjectID)
-//
-//	createCollectionRequest.MetadataApiUrl = &info.MetadataUrl
-//
-//	response, err := c.CreateCollection(ctx, l1signer, createCollectionRequest)
-//	if err != nil {
-//		log.Panicf("error in CreateCollection: %v\n", err)
-//	}
-//
-//	val, err := json.MarshalIndent(response, "", "    ")
-//	if err != nil {
-//		log.Panicf("error in json marshaling: %v\n", err)
-//	}
-//	log.Println("Created new collection, response: ", string(val))
-//
-//	// Get the collection details we just created.
-//	collectionReponse, err := c.GetCollection(ctx, info.ContractAddress)
-//	if err != nil {
-//		log.Panicf("error when calling `GetCollection: %v", err)
-//	}
-//	log.Println("Created Collection Name: ", collectionReponse.Name)
-//}
+
 //
 //func createMetadata(c *imx.Client, l1signer imx.L1Signer, info *MetadataInformation) {
 //	ctx := context.TODO()
