@@ -35,7 +35,7 @@ func main() {
 		log.Fatal("error configuring DB", err)
 	}
 
-	imx := imx.NewIMX(config.AlchemyAPIKey, config.L1SignerPrivateKey, config.StarkPrivateKey)
+	imx := imx.NewIMX(config.AlchemyAPIKey, config.L1SignerPrivateKey, config.StarkPrivateKey, config.ProjectID)
 	defer imx.Close()
 
 	handlers := handlers.NewHandler(db, imx)

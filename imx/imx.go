@@ -14,13 +14,54 @@ import (
 )
 
 type IMX struct {
-	client   *imx.Client
-	l1signer imx.L1Signer
-	l2signer imx.L2Signer
-	chainId  *big.Int
+	client    *imx.Client
+	l1signer  imx.L1Signer
+	l2signer  imx.L2Signer
+	chainId   *big.Int
+	projectID int32
 }
 
-func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey string) *IMX {
+type ProjectInformation struct {
+	ProjectName  string
+	CompanyName  string
+	ContactEmail string
+}
+
+type CollectionInformation struct {
+	ProjectID       int32
+	ContractAddress string
+	CollectionName  string
+	PublicKey       string
+	MetadataUrl     string
+}
+
+type MetadataInformation struct {
+	ContractAddress string
+	Fields          []MetadataFieldInformation
+}
+
+type MetadataFieldInformation struct {
+	Name string
+	Type string
+}
+
+type MintInformation struct {
+	ContractAddress string
+	TokenID         string
+	Blueprint       string
+}
+
+type OrderInformation struct {
+	ContractAddress string
+	TokenID         string
+	Amount          uint64
+}
+
+type CreateDeposit struct {
+	DepositAmountWei string
+}
+
+func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey string, projectID int32) *IMX {
 	apiConfiguration := api.NewConfiguration()
 	cfg := imx.Config{
 		APIConfig:     apiConfiguration,
@@ -39,7 +80,7 @@ func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey str
 
 	l2signer, _ := newStarkSigner(starkPrivateKey)
 
-	return &IMX{client, l1signer, l2signer, cfg.ChainID}
+	return &IMX{client, l1signer, l2signer, cfg.ChainID, projectID}
 }
 
 func (i *IMX) CreateUser(ctx context.Context, user *models.User) (string, error) {
@@ -72,39 +113,6 @@ func (i *IMX) CreateUser(ctx context.Context, user *models.User) (string, error)
 
 func (i *IMX) Close() {
 	i.client.EthClient.Close()
-}
-
-type ProjectInformation struct {
-	ProjectName  string
-	CompanyName  string
-	ContactEmail string
-}
-
-type CollectionInformation struct {
-	ProjectID       int32
-	ContractAddress string
-	CollectionName  string
-	PublicKey       string
-	MetadataUrl     string
-}
-
-type MetadataInformation struct {
-	ContractAddress string
-}
-
-type MintInformation struct {
-	ContractAddress string
-	TokenID         string
-}
-
-type OrderInformation struct {
-	ContractAddress string
-	TokenID         string
-	Amount          uint64
-}
-
-type CreateDeposit struct {
-	DepositAmountWei string
 }
 
 func newStarkSigner(privateStarkKeyStr string) (imx.L2Signer, string) {
@@ -160,6 +168,8 @@ func (i *IMX) CreateProject(ctx context.Context, info *ProjectInformation) (int3
 }
 
 func (i *IMX) CreateCollection(ctx context.Context, info *CollectionInformation) error {
+	info.ProjectID = i.projectID
+
 	createCollectionRequest := api.NewCreateCollectionRequest(info.ContractAddress,
 		info.CollectionName,
 		info.PublicKey,
@@ -185,6 +195,75 @@ func (i *IMX) CreateCollection(ctx context.Context, info *CollectionInformation)
 	}
 	log.Println("Created Collection Name: ", collectionReponse.Name)
 
+	return nil
+}
+
+func (i *IMX) CreateMetadata(ctx context.Context, info *MetadataInformation) error {
+	metadata := make([]api.MetadataSchemaRequest, len(info.Fields))
+	for _, f := range info.Fields {
+		field := api.NewMetadataSchemaRequest(f.Name)
+		field.SetType(f.Type)
+		metadata = append(metadata, *field)
+	}
+
+	request := api.NewAddMetadataSchemaToCollectionRequest(metadata)
+	response, err := i.client.AddMetadataSchemaToCollection(ctx, i.l1signer, info.ContractAddress, *request)
+	if err != nil {
+		return err
+	}
+
+	val, err := prettyStruct(response)
+	if err != nil {
+		return err
+	}
+	log.Println("Created new metadata, response: ", val)
+	return nil
+}
+
+func (i *IMX) CreateToken(ctx context.Context, info *MintInformation) error {
+	tokenID := info.TokenID
+	tokenAddress := info.ContractAddress
+	ethAddress := i.l1signer.GetAddress()
+	blueprint := info.Blueprint
+
+	var royaltyPercentage float32 = 1
+
+	var mintableToken = imx.UnsignedMintRequest{
+		ContractAddress: tokenAddress,
+		Royalties: []imx.MintFee{
+			{
+				Percentage: royaltyPercentage,
+				Recipient:  ethAddress,
+			},
+		},
+		Users: []imx.User{
+			{
+				User: ethAddress,
+				Tokens: []imx.MintableTokenData{
+					{
+						ID: tokenID,
+						Royalties: []imx.MintFee{
+							{
+								Percentage: royaltyPercentage,
+								Recipient:  ethAddress,
+							},
+						},
+						Blueprint: blueprint,
+					},
+				},
+			},
+		},
+	}
+
+	request := make([]imx.UnsignedMintRequest, 1)
+	request[0] = mintableToken
+
+	mintTokensResponse, err := i.client.Mint(ctx, i.l1signer, request)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Mint Tokens response:\n%v\n", mintTokensResponse.Results[0].TxId)
 	return nil
 }
 
@@ -243,93 +322,7 @@ func (i *IMX) CreateCollection(ctx context.Context, info *CollectionInformation)
 //
 
 //
-//func createMetadata(c *imx.Client, l1signer imx.L1Signer, info *MetadataInformation) {
-//	ctx := context.TODO()
-//
-//	/*metaName := api.NewMetadataSchemaRequest("name")
-//	metaName.SetFilterable(false)
-//	metaName.SetType("text")
-//	*/
-//	metaDescription := api.NewMetadataSchemaRequest("description")
-//	metaDescription.SetFilterable(false)
-//	metaDescription.SetType("text")
-//
-//	metaImage := api.NewMetadataSchemaRequest("image_url")
-//	metaImage.SetFilterable(false)
-//	metaImage.SetType("text")
-//
-//	/*
-//		metaType := api.NewMetadataSchemaRequest("type")
-//		metaType.SetFilterable(true)
-//		metaType.SetType("discrete")*/
-//
-//	metadata := make([]api.MetadataSchemaRequest, 0)
-//	//metadata = append(metadata, *metaName)
-//	//metadata = append(metadata, *metaType)
-//	metadata = append(metadata, *metaDescription)
-//	metadata = append(metadata, *metaImage)
-//
-//	request := api.NewAddMetadataSchemaToCollectionRequest(metadata)
-//
-//	response, err := c.AddMetadataSchemaToCollection(ctx, l1signer, info.ContractAddress, *request)
-//	if err != nil {
-//		log.Panicf("error in AddMetadataSchemaToCollection: %v\n", err)
-//	}
-//
-//	val, err := json.MarshalIndent(response, "", "    ")
-//	if err != nil {
-//		log.Panicf("error in json marshaling: %v\n", err)
-//	}
-//	log.Println("Created new metadata, response: ", string(val))
-//}
-//
-//func mint(c *imx.Client, l1signer imx.L1Signer, info *MintInformation) {
-//	ctx := context.TODO()
-//
-//	tokenID := info.TokenID
-//	tokenAddress := info.ContractAddress
-//	ethAddress := l1signer.GetAddress()
-//	blueprint := "123"
-//
-//	var royaltyPercentage float32 = 1
-//
-//	var mintableToken = imx.UnsignedMintRequest{
-//		ContractAddress: tokenAddress,
-//		Royalties: []imx.MintFee{
-//			{
-//				Percentage: royaltyPercentage,
-//				Recipient:  ethAddress,
-//			},
-//		},
-//		Users: []imx.User{
-//			{
-//				User: ethAddress,
-//				Tokens: []imx.MintableTokenData{
-//					{
-//						ID: tokenID,
-//						Royalties: []imx.MintFee{
-//							{
-//								Percentage: royaltyPercentage,
-//								Recipient:  ethAddress,
-//							},
-//						},
-//						Blueprint: blueprint,
-//					},
-//				},
-//			},
-//		},
-//	}
-//
-//	request := make([]imx.UnsignedMintRequest, 1)
-//	request[0] = mintableToken
-//
-//	mintTokensResponse, err := c.Mint(ctx, l1signer, request)
-//	if err != nil {
-//		log.Panicf("error in minting.MintTokensWorkflow: %v", err)
-//	}
-//
-//	log.Printf("Mint Tokens response:\n%v\n", mintTokensResponse.Results[0].TxId)
-//}
+
 //
 //func getBoolPointer(val bool) *bool {
 //	return &val
