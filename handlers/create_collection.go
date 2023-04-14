@@ -22,7 +22,6 @@ func (h *Handler) CreateCollection(w http.ResponseWriter, r *http.Request) {
 		ContractAddress: data.ContractAddress,
 		CollectionName:  data.CollectionName,
 		MetadataUrl:     data.MetadataUrl,
-		PublicKey:       data.PublicKey,
 	}
 
 	err := h.imx.CreateCollection(r.Context(), &info)
@@ -62,16 +61,15 @@ func (h *Handler) CreateCollection(w http.ResponseWriter, r *http.Request) {
 }
 
 type CollectionRequest struct {
-	ContractAddress string
-	CollectionName  string
-	PublicKey       string
-	MetadataUrl     string
-	Fields          []CollectionFieldRequest
+	ContractAddress string                   `json:"contract_address"`
+	CollectionName  string                   `json:"collection_name"`
+	MetadataUrl     string                   `json:"metadata_url"`
+	Fields          []CollectionFieldRequest `json:"fields"`
 }
 
 type CollectionFieldRequest struct {
-	Name string
-	Type string
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 func (a *CollectionRequest) Bind(r *http.Request) error {

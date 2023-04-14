@@ -169,6 +169,7 @@ func (i *IMX) CreateProject(ctx context.Context, info *ProjectInformation) (int3
 
 func (i *IMX) CreateCollection(ctx context.Context, info *CollectionInformation) error {
 	info.ProjectID = i.projectID
+	info.PublicKey = i.l1signer.GetPublicKey()
 
 	createCollectionRequest := api.NewCreateCollectionRequest(info.ContractAddress,
 		info.CollectionName,
