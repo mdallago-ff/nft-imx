@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"crypto/subtle"
 	"errors"
 	"github.com/go-chi/oauth"
+	"github.com/google/uuid"
 	"net/http"
 	"nft/db"
 )
@@ -22,13 +24,26 @@ func (*UserVerifier) ValidateUser(username, password, scope string, r *http.Requ
 }
 
 // ValidateClient validates clientID and secret returning an error if the client credentials are wrong
-func (*UserVerifier) ValidateClient(clientID, clientSecret, scope string, r *http.Request) error {
-	//TODO
-	if clientID == "abcdef" && clientSecret == "12345" {
-		return nil
+func (u *UserVerifier) ValidateClient(clientID, clientSecret, scope string, r *http.Request) error {
+	id, err := uuid.Parse(clientID)
+	if err != nil {
+		return errors.New("wrong client")
 	}
 
-	return errors.New("wrong client")
+	user, err := u.db.GetUser(id)
+	if err != nil {
+		return errors.New("wrong client")
+	}
+
+	if user == nil {
+		return errors.New("wrong client")
+	}
+
+	if subtle.ConstantTimeCompare([]byte(user.ApiKey), []byte(clientSecret)) == 0 {
+		return errors.New("wrong client")
+	}
+
+	return nil
 }
 
 // ValidateCode validates token ID
