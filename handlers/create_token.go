@@ -33,16 +33,16 @@ func (h *Handler) CreateToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	err = render.Render(w, r, NewTokenResponse())
+	err = render.Render(w, r, NewTokenResponse(data.TokenID))
 	if err != nil {
 		log.Error("error rendering response", err)
 	}
 }
 
 type TokenRequest struct {
-	ContractAddress string
-	TokenID         string
-	Blueprint       string
+	ContractAddress string `json:"contract_address"`
+	TokenID         string `json:"token_id"`
+	Blueprint       string `json:"blueprint"`
 }
 
 func (a *TokenRequest) Bind(r *http.Request) error {
@@ -51,10 +51,11 @@ func (a *TokenRequest) Bind(r *http.Request) error {
 }
 
 type TokenResponse struct {
+	TokenID string `json:"token_id"`
 }
 
-func NewTokenResponse() *TokenResponse {
-	resp := &TokenResponse{}
+func NewTokenResponse(id string) *TokenResponse {
+	resp := &TokenResponse{TokenID: id}
 	return resp
 }
 

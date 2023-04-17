@@ -200,7 +200,7 @@ func (i *IMX) CreateCollection(ctx context.Context, info *CollectionInformation)
 }
 
 func (i *IMX) CreateMetadata(ctx context.Context, info *MetadataInformation) error {
-	metadata := make([]api.MetadataSchemaRequest, len(info.Fields))
+	metadata := make([]api.MetadataSchemaRequest, 0)
 	for _, f := range info.Fields {
 		field := api.NewMetadataSchemaRequest(f.Name)
 		field.SetType(f.Type)

@@ -93,7 +93,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 type UserRequest struct {
-	Mail string
+	Mail string `json:"mail"`
 }
 
 func (a *UserRequest) Bind(r *http.Request) error {

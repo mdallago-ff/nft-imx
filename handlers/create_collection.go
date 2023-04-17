@@ -54,7 +54,7 @@ func (h *Handler) CreateCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	err = render.Render(w, r, NewCollectionResponse())
+	err = render.Render(w, r, NewCollectionResponse(data.CollectionName, data.ContractAddress))
 	if err != nil {
 		log.Error("error rendering response", err)
 	}
@@ -85,12 +85,12 @@ func (a *CollectionRequest) Bind(r *http.Request) error {
 }
 
 type CollectionResponse struct {
-	ContractAddress string
-	CollectionName  string
+	ContractAddress string `json:"contract_address"`
+	CollectionName  string `json:"collection_name"`
 }
 
-func NewCollectionResponse() *CollectionResponse {
-	resp := &CollectionResponse{CollectionName: "", ContractAddress: ""}
+func NewCollectionResponse(name string, address string) *CollectionResponse {
+	resp := &CollectionResponse{CollectionName: name, ContractAddress: address}
 	return resp
 }
 
