@@ -26,3 +26,7 @@ func (i ImxDummy) CreateMetadata(ctx context.Context, info *imx.MetadataInformat
 func (i ImxDummy) CreateToken(ctx context.Context, info *imx.MintInformation) error {
 	return nil
 }
+
+func (i ImxDummy) TransferToken(ctx context.Context, info *imx.TransferInformation) error {
+	return nil
+}

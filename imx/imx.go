@@ -19,6 +19,7 @@ type Client interface {
 	CreateCollection(ctx context.Context, info *CollectionInformation) error
 	CreateMetadata(ctx context.Context, info *MetadataInformation) error
 	CreateToken(ctx context.Context, info *MintInformation) error
+	TransferToken(ctx context.Context, info *TransferInformation) error
 }
 
 type IMX struct {
@@ -67,6 +68,12 @@ type OrderInformation struct {
 
 type CreateDeposit struct {
 	DepositAmountWei string
+}
+
+type TransferInformation struct {
+	TokenID         string
+	ContractAddress string
+	ReceiverAddress string
 }
 
 func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey string, projectID int32) Client {
@@ -273,6 +280,35 @@ func (i *IMX) CreateToken(ctx context.Context, info *MintInformation) error {
 	}
 
 	log.Printf("Mint Tokens response:\n%v\n", mintTokensResponse.Results[0].TxId)
+	return nil
+}
+
+func (i *IMX) TransferToken(ctx context.Context, info *TransferInformation) error {
+	signableToken1 := imx.SignableERC721Token(info.TokenID, info.ContractAddress)
+
+	transferRequest1 := api.SignableTransferDetails{
+		Amount:   "1",
+		Receiver: info.ReceiverAddress,
+		Token:    signableToken1,
+	}
+
+	batchTransferRequest := api.GetSignableTransferRequest{
+		SenderEtherKey: i.l1signer.GetAddress(),
+		SignableRequests: []api.SignableTransferDetails{
+			transferRequest1,
+		},
+	}
+
+	response, err := i.client.BatchNftTransfer(ctx, i.l1signer, i.l2signer, batchTransferRequest)
+	if err != nil {
+		return err
+	}
+
+	val, err := prettyStruct(response)
+	if err != nil {
+		return err
+	}
+	log.Println("Created new metadata, response: ", val)
 	return nil
 }
 

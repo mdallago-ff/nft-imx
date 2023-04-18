@@ -56,5 +56,9 @@ func (s *Server) Configure() {
 		r.Route("/tokens", func(r chi.Router) {
 			r.Post("/", handlers.CreateToken)
 		})
+
+		r.Route("/transfers", func(r chi.Router) {
+			r.Post("/", handlers.TransferToken)
+		})
 	})
 }

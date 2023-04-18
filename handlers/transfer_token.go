@@ -8,8 +8,8 @@ import (
 	"nft/imx"
 )
 
-func (h *Handler) CreateToken(w http.ResponseWriter, r *http.Request) {
-	data := &TokenRequest{}
+func (h *Handler) TransferToken(w http.ResponseWriter, r *http.Request) {
+	data := &TransferTokenRequest{}
 	if err := render.Bind(r, data); err != nil {
 		err = render.Render(w, r, ErrInvalidRequest(err))
 		if err != nil {
@@ -18,14 +18,14 @@ func (h *Handler) CreateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	info := imx.MintInformation{
+	info := imx.TransferInformation{
 		ContractAddress: data.ContractAddress,
 		TokenID:         data.TokenID,
-		Blueprint:       data.Blueprint,
+		ReceiverAddress: data.ReceiverAddress,
 	}
-	err := h.imx.CreateToken(r.Context(), &info)
+	err := h.imx.TransferToken(r.Context(), &info)
 	if err != nil {
-		log.Error("error creating token", err)
+		log.Error("error transfering token", err)
 		err = render.Render(w, r, ErrInvalidRequest(err))
 		if err != nil {
 			log.Error("error rendering response", err)
@@ -34,19 +34,19 @@ func (h *Handler) CreateToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	err = render.Render(w, r, NewTokenResponse(data.TokenID))
+	err = render.Render(w, r, NewTransferTokenResponse(data.TokenID))
 	if err != nil {
 		log.Error("error rendering response", err)
 	}
 }
 
-type TokenRequest struct {
+type TransferTokenRequest struct {
 	ContractAddress string `json:"contract_address"`
 	TokenID         string `json:"token_id"`
-	Blueprint       string `json:"blueprint"`
+	ReceiverAddress string `json:"receiver_address"`
 }
 
-func (a *TokenRequest) Bind(r *http.Request) error {
+func (a *TransferTokenRequest) Bind(r *http.Request) error {
 	if len(a.ContractAddress) == 0 {
 		return errors.New("missing required fields")
 	}
@@ -55,18 +55,22 @@ func (a *TokenRequest) Bind(r *http.Request) error {
 		return errors.New("missing required fields")
 	}
 
+	if len(a.ReceiverAddress) == 0 {
+		return errors.New("missing required fields")
+	}
+
 	return nil
 }
 
-type TokenResponse struct {
+type TransferTokenResponse struct {
 	TokenID string `json:"token_id"`
 }
 
-func NewTokenResponse(id string) *TokenResponse {
-	resp := &TokenResponse{TokenID: id}
+func NewTransferTokenResponse(id string) *TransferTokenResponse {
+	resp := &TransferTokenResponse{TokenID: id}
 	return resp
 }
 
-func (rd *TokenResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (rd *TransferTokenResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

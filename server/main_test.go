@@ -100,6 +100,18 @@ func (s *UnitTestSuite) TestCreateToken() {
 	s.Assertions.Equal("1", objMap["token_id"])
 }
 
+func (s *UnitTestSuite) TestTransferToken() {
+	var jsonStr = []byte(`{"contract_address":"0x3e421D98cFf855520cA521385d85feBbAf5e1332", "token_id":"1", "receiver_address": "0x18b1ceDC9803096D970f52260D1835F07D7e448C"}`)
+	req, _ := http.NewRequest("POST", "/transfers", bytes.NewBuffer(jsonStr))
+	response := s.executeRequest(req)
+	s.checkResponseCode(http.StatusCreated, response.Code)
+
+	objMap := map[string]string{}
+	err := json.Unmarshal(response.Body.Bytes(), &objMap)
+	s.Assertions.Nil(err)
+	s.Assertions.Equal("1", objMap["token_id"])
+}
+
 func (s *UnitTestSuite) TestCreateCollectionWithoutParamsShouldFail() {
 	req, _ := http.NewRequest("POST", "/collections", nil)
 	response := s.executeRequest(req)
@@ -108,6 +120,12 @@ func (s *UnitTestSuite) TestCreateCollectionWithoutParamsShouldFail() {
 
 func (s *UnitTestSuite) TestCreateTokenWithoutParamsShouldFail() {
 	req, _ := http.NewRequest("POST", "/tokens", nil)
+	response := s.executeRequest(req)
+	s.checkResponseCode(http.StatusInternalServerError, response.Code)
+}
+
+func (s *UnitTestSuite) TestTransferTokenWithoutParamsShouldFail() {
+	req, _ := http.NewRequest("POST", "/transfers", nil)
 	response := s.executeRequest(req)
 	s.checkResponseCode(http.StatusInternalServerError, response.Code)
 }
