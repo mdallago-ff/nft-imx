@@ -7,9 +7,9 @@ import (
 
 type Handler struct {
 	db  *db.DB
-	imx *imx.IMX
+	imx imx.Client
 }
 
-func NewHandler(db *db.DB, imx *imx.IMX) *Handler {
+func NewHandler(db *db.DB, imx imx.Client) *Handler {
 	return &Handler{db, imx}
 }

@@ -17,10 +17,10 @@ type Server struct {
 	Router *chi.Mux
 	config *config.Settings
 	db     *db.DB
-	imx    *imx.IMX
+	imx    imx.Client
 }
 
-func NewServer(config *config.Settings, db *db.DB, imx *imx.IMX) *Server {
+func NewServer(config *config.Settings, db *db.DB, imx imx.Client) *Server {
 	return &Server{chi.NewRouter(), config, db, imx}
 }
 

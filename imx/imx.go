@@ -13,6 +13,14 @@ import (
 	"strconv"
 )
 
+type Client interface {
+	Close()
+	CreateUser(ctx context.Context, user *models.User) (string, error)
+	CreateCollection(ctx context.Context, info *CollectionInformation) error
+	CreateMetadata(ctx context.Context, info *MetadataInformation) error
+	CreateToken(ctx context.Context, info *MintInformation) error
+}
+
 type IMX struct {
 	client    *imx.Client
 	l1signer  imx.L1Signer
@@ -61,7 +69,7 @@ type CreateDeposit struct {
 	DepositAmountWei string
 }
 
-func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey string, projectID int32) *IMX {
+func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey string, projectID int32) Client {
 	apiConfiguration := api.NewConfiguration()
 	cfg := imx.Config{
 		APIConfig:     apiConfiguration,
