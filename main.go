@@ -2,18 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/oauth"
-	"github.com/go-chi/render"
 	"log"
 	"net/http"
-	"nft/auth"
 	"nft/config"
 	"nft/db"
-	"nft/handlers"
 	"nft/imx"
-	"time"
+	"nft/server"
 )
 
 func main() {
@@ -38,41 +32,10 @@ func main() {
 	imx := imx.NewIMX(config.AlchemyAPIKey, config.L1SignerPrivateKey, config.StarkPrivateKey, config.ProjectID)
 	defer imx.Close()
 
-	handlers := handlers.NewHandler(db, imx)
+	server := server.NewServer(config, db, imx)
+	server.Configure()
 
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.URLFormat)
-	r.Use(render.SetContentType(render.ContentTypeJSON))
-
-	s := oauth.NewBearerServer(
-		config.AuthSecret,
-		time.Second*120,
-		auth.NewUserVerifier(db),
-		nil)
-	r.Post("/auth", s.ClientCredentials)
-
-	r.Route("/users", func(r chi.Router) {
-		r.Post("/", handlers.CreateUser)
-	})
-
-	r.Group(func(r chi.Router) {
-		if !config.DebugMode {
-			r.Use(oauth.Authorize(config.AuthSecret, nil))
-		}
-
-		r.Route("/collections", func(r chi.Router) {
-			r.Post("/", handlers.CreateCollection)
-		})
-
-		r.Route("/tokens", func(r chi.Router) {
-			r.Post("/", handlers.CreateToken)
-		})
-	})
-
-	err = http.ListenAndServe(":"+config.Port, r)
+	err = http.ListenAndServe(":"+config.Port, server.Router)
 	if err != nil {
 		log.Fatal("error stopping web server", err)
 	}
