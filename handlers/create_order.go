@@ -6,10 +6,11 @@ import (
 	"github.com/go-chi/render"
 	"net/http"
 	"nft/imx"
+	"strconv"
 )
 
-func (h *Handler) TransferToken(w http.ResponseWriter, r *http.Request) {
-	data := &TransferTokenRequest{}
+func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
+	data := &OrderRequest{}
 	if err := render.Bind(r, data); err != nil {
 		err = render.Render(w, r, ErrInvalidRequest(err))
 		if err != nil {
@@ -18,14 +19,25 @@ func (h *Handler) TransferToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	info := imx.TransferInformation{
+	amount, err := strconv.ParseUint(data.Amount, 10, 64)
+	if err != nil {
+		log.Error("error creating order", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	info := imx.OrderInformation{
 		ContractAddress: data.ContractAddress,
 		TokenID:         data.TokenID,
-		ReceiverAddress: data.ReceiverAddress,
+		Amount:          amount,
 	}
-	err := h.imx.TransferToken(r.Context(), &info)
+
+	err = h.imx.CreateOrder(r.Context(), &info)
 	if err != nil {
-		log.Error("error transferring token", err)
+		log.Error("error creating order", err)
 		err = render.Render(w, r, ErrInvalidRequest(err))
 		if err != nil {
 			log.Error("error rendering response", err)
@@ -34,19 +46,19 @@ func (h *Handler) TransferToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	err = render.Render(w, r, NewTransferTokenResponse(data.TokenID))
+	err = render.Render(w, r, NewOrderResponse(data.TokenID))
 	if err != nil {
 		log.Error("error rendering response", err)
 	}
 }
 
-type TransferTokenRequest struct {
+type OrderRequest struct {
 	ContractAddress string `json:"contract_address"`
 	TokenID         string `json:"token_id"`
-	ReceiverAddress string `json:"receiver_address"`
+	Amount          string `json:"amount"`
 }
 
-func (a *TransferTokenRequest) Bind(r *http.Request) error {
+func (a *OrderRequest) Bind(r *http.Request) error {
 	if len(a.ContractAddress) == 0 {
 		return errors.New("missing required fields")
 	}
@@ -55,22 +67,18 @@ func (a *TransferTokenRequest) Bind(r *http.Request) error {
 		return errors.New("missing required fields")
 	}
 
-	if len(a.ReceiverAddress) == 0 {
-		return errors.New("missing required fields")
-	}
-
 	return nil
 }
 
-type TransferTokenResponse struct {
+type OrderResponse struct {
 	TokenID string `json:"token_id"`
 }
 
-func NewTransferTokenResponse(id string) *TransferTokenResponse {
-	resp := &TransferTokenResponse{TokenID: id}
+func NewOrderResponse(id string) *OrderResponse {
+	resp := &OrderResponse{TokenID: id}
 	return resp
 }
 
-func (rd *TransferTokenResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (rd *OrderResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

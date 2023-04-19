@@ -30,3 +30,7 @@ func (i ImxDummy) CreateToken(ctx context.Context, info *imx.MintInformation) er
 func (i ImxDummy) TransferToken(ctx context.Context, info *imx.TransferInformation) error {
 	return nil
 }
+
+func (i ImxDummy) CreateOrder(ctx context.Context, info *imx.OrderInformation) error {
+	return nil
+}

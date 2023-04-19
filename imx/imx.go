@@ -20,6 +20,7 @@ type Client interface {
 	CreateMetadata(ctx context.Context, info *MetadataInformation) error
 	CreateToken(ctx context.Context, info *MintInformation) error
 	TransferToken(ctx context.Context, info *TransferInformation) error
+	CreateOrder(ctx context.Context, info *OrderInformation) error
 }
 
 type IMX struct {
@@ -312,6 +313,34 @@ func (i *IMX) TransferToken(ctx context.Context, info *TransferInformation) erro
 	return nil
 }
 
+func (i *IMX) CreateOrder(ctx context.Context, info *OrderInformation) error {
+	ethAddress := i.l1signer.GetAddress()                                    // Address of the user listing for sale.
+	sellToken := imx.SignableERC721Token(info.TokenID, info.ContractAddress) // NFT Token
+	buyToken := imx.SignableETHToken()                                       // The listed asset can be bought with Ethereum
+	createOrderRequest := &api.GetSignableOrderRequest{
+		AmountBuy:  strconv.FormatUint(info.Amount, 10),
+		AmountSell: "1",
+		Fees:       nil,
+		TokenBuy:   buyToken,
+		TokenSell:  sellToken,
+		User:       ethAddress,
+	}
+	createOrderRequest.SetExpirationTimestamp(0)
+
+	// Create order will list the given asset for sale.
+	createOrderResponse, err := i.client.CreateOrder(ctx, i.l1signer, i.l2signer, createOrderRequest)
+	if err != nil {
+		return err
+	}
+
+	createOrderResponseStr, err := prettyStruct(createOrderResponse)
+	if err != nil {
+		return err
+	}
+	log.Printf("CreateOrder response:\n%v\n", createOrderResponseStr)
+	return nil
+}
+
 //
 //func trimHexPrefix(hexString string) (string, error) {
 //	if len(hexString) < 2 {
@@ -417,34 +446,7 @@ func (i *IMX) TransferToken(ctx context.Context, info *TransferInformation) erro
 //
 
 //
-//func createOrder(c *imx.Client, l1signer imx.L1Signer, l2signer imx.L2Signer, info *OrderInformation) {
-//	ctx := context.TODO()
-//	ethAddress := l1signer.GetAddress()                                      // Address of the user listing for sale.
-//	sellToken := imx.SignableERC721Token(info.TokenID, info.ContractAddress) // NFT Token
-//	buyToken := imx.SignableETHToken()                                       // The listed asset can be bought with Ethereum
-//	createOrderRequest := &api.GetSignableOrderRequest{
-//		AmountBuy:  strconv.FormatUint(info.Amount, 10),
-//		AmountSell: "1",
-//		Fees:       nil,
-//		TokenBuy:   buyToken,
-//		TokenSell:  sellToken,
-//		User:       ethAddress,
-//	}
-//	createOrderRequest.SetExpirationTimestamp(0)
-//
-//	// Create order will list the given asset for sale.
-//	createOrderResponse, err := c.CreateOrder(ctx, l1signer, l2signer, createOrderRequest)
-//	if err != nil {
-//		log.Panicf("error in CreateOrder: %v", err)
-//	}
-//
-//	createOrderResponseStr, err := prettyStruct(createOrderResponse)
-//	if err != nil {
-//		log.Panic(err)
-//	}
-//	log.Printf("CreateOrder response:\n%v\n", createOrderResponseStr)
-//}
-//
+
 //func getOrders(c *imx.Client) {
 //	request := api.ApiListOrdersRequest{}
 //	request = request.User("0x1E09BCED9684d94fDCa0b3c7f42F3F21D0d32b4d")

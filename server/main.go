@@ -60,5 +60,9 @@ func (s *Server) Configure() {
 		r.Route("/transfers", func(r chi.Router) {
 			r.Post("/", handlers.TransferToken)
 		})
+
+		r.Route("/orders", func(r chi.Router) {
+			r.Post("/", handlers.CreateOrder)
+		})
 	})
 }
