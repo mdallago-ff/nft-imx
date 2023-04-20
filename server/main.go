@@ -35,7 +35,7 @@ func (s *Server) Configure() {
 
 	bearerServer := oauth.NewBearerServer(
 		s.config.AuthSecret,
-		time.Second*120,
+		time.Second*time.Duration(s.config.TokenDurationSeconds),
 		auth.NewUserVerifier(s.db),
 		nil)
 	s.Router.Post("/auth", bearerServer.ClientCredentials)

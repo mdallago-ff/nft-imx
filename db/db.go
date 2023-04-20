@@ -71,3 +71,28 @@ func (d *DB) GetUserByMail(mail string) (*models.User, error) {
 
 	return &user, nil
 }
+
+func (d *DB) CreateCollection(collection *models.Collection) error {
+	//save database
+	return d.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&collection).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (d *DB) GetCollection(id uuid.UUID) (*models.Collection, error) {
+	var collection models.Collection
+	if err := d.db.First(&collection, id).Error; err != nil {
+		switch err {
+		case gorm.ErrRecordNotFound:
+			return nil, nil
+		default:
+			return nil, err
+		}
+	}
+
+	return &collection, nil
+}

@@ -3,9 +3,12 @@ package handlers
 import (
 	"errors"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/go-chi/oauth"
 	"github.com/go-chi/render"
+	"github.com/google/uuid"
 	"net/http"
 	"nft/imx"
+	"nft/models"
 )
 
 func (h *Handler) CreateCollection(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +49,31 @@ func (h *Handler) CreateCollection(w http.ResponseWriter, r *http.Request) {
 	err = h.imx.CreateMetadata(r.Context(), &metadataInfo)
 	if err != nil {
 		log.Error("error creating metadata", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	userID, err := uuid.Parse(r.Context().Value(oauth.CredentialContext).(string))
+	if err != nil {
+		log.Error("error parsing user", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	collection := models.Collection{
+		ID:              uuid.New(),
+		UserID:          userID,
+		ContractAddress: data.ContractAddress,
+	}
+	err = h.db.CreateCollection(&collection)
+	if err != nil {
+		log.Error("error saving collection", err)
 		err = render.Render(w, r, ErrInvalidRequest(err))
 		if err != nil {
 			log.Error("error rendering response", err)

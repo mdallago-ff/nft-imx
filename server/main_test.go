@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/go-chi/oauth"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
@@ -78,7 +80,9 @@ func (s *UnitTestSuite) TestCreateUserWithoutEmailShouldFail() {
 func (s *UnitTestSuite) TestCreateCollection() {
 	var jsonStr = []byte(`{"contract_address":"0x4958d0B91412eE2b8D715bF9279DCDB68e33d195", "collection_name":"prueba", "metadata_url":"https://gateway.pinata.cloud/ipfs/QmNj8NJwPbNGGv7HtjBii3TH1qa6yTmoJomvGth2rsXXyR", "fields": [ {"name":"name", "type": "text"} ]}`)
 	req, _ := http.NewRequest("POST", "/collections", bytes.NewBuffer(jsonStr))
-	response := s.executeRequest(req)
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, oauth.CredentialContext, uuid.NewString())
+	response := s.executeRequest(req.WithContext(ctx))
 	s.checkResponseCode(http.StatusCreated, response.Code)
 
 	objMap := map[string]string{}
@@ -91,7 +95,11 @@ func (s *UnitTestSuite) TestCreateCollection() {
 func (s *UnitTestSuite) TestCreateToken() {
 	var jsonStr = []byte(`{"contract_address":"0x4958d0B91412eE2b8D715bF9279DCDB68e33d195", "token_id": "1", "blueprint": "123456" }`)
 	req, _ := http.NewRequest("POST", "/tokens", bytes.NewBuffer(jsonStr))
-	response := s.executeRequest(req)
+
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, oauth.CredentialContext, uuid.NewString())
+	response := s.executeRequest(req.WithContext(ctx))
+
 	s.checkResponseCode(http.StatusCreated, response.Code)
 
 	objMap := map[string]string{}
@@ -103,7 +111,11 @@ func (s *UnitTestSuite) TestCreateToken() {
 func (s *UnitTestSuite) TestTransferToken() {
 	var jsonStr = []byte(`{"contract_address":"0x3e421D98cFf855520cA521385d85feBbAf5e1332", "token_id":"1", "receiver_address": "0x18b1ceDC9803096D970f52260D1835F07D7e448C"}`)
 	req, _ := http.NewRequest("POST", "/transfers", bytes.NewBuffer(jsonStr))
-	response := s.executeRequest(req)
+
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, oauth.CredentialContext, uuid.NewString())
+	response := s.executeRequest(req.WithContext(ctx))
+
 	s.checkResponseCode(http.StatusCreated, response.Code)
 
 	objMap := map[string]string{}
@@ -115,7 +127,11 @@ func (s *UnitTestSuite) TestTransferToken() {
 func (s *UnitTestSuite) TestCreateOrder() {
 	var jsonStr = []byte(`{"contract_address":"0x3e421D98cFf855520cA521385d85feBbAf5e1332", "token_id":"1", "amount": "1000000"}`)
 	req, _ := http.NewRequest("POST", "/orders", bytes.NewBuffer(jsonStr))
-	response := s.executeRequest(req)
+
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, oauth.CredentialContext, uuid.NewString())
+	response := s.executeRequest(req.WithContext(ctx))
+
 	s.checkResponseCode(http.StatusCreated, response.Code)
 
 	objMap := map[string]string{}

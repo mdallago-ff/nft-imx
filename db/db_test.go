@@ -115,3 +115,29 @@ func (s *UnitTestSuite) TestGetUserByMail() {
 func TestUnitTestSuite(t *testing.T) {
 	suite.Run(t, new(UnitTestSuite))
 }
+
+func (s *UnitTestSuite) createDummyCollection(id uuid.UUID, userID uuid.UUID, contractAddress string) *models.Collection {
+	return &models.Collection{
+		ID:              id,
+		UserID:          userID,
+		ContractAddress: contractAddress,
+	}
+}
+
+func (s *UnitTestSuite) TestCreateCollection() {
+	id := uuid.New()
+	collection, err := s.db.GetCollection(id)
+	s.Assertions.Nil(err)
+	s.Assertions.Nil(collection)
+
+	userID := uuid.New()
+	newCollection := s.createDummyCollection(id, userID, "test address")
+
+	err = s.db.CreateCollection(newCollection)
+	s.Assertions.Nil(err)
+
+	collection, err = s.db.GetCollection(id)
+	s.Assertions.Nil(err)
+	s.Assertions.NotNil(collection)
+	s.Assertions.Equal(collection, newCollection)
+}
