@@ -92,7 +92,7 @@ func (s *UnitTestSuite) TestUpdateUser() {
 }
 
 func (s *UnitTestSuite) TestGetUserByMail() {
-	mail := "test@test.com"
+	mail := uuid.NewString() + "@test.com"
 	user, err := s.db.GetUserByMail(mail)
 	s.Assertions.Nil(err)
 	s.Assertions.Nil(user)
@@ -110,10 +110,6 @@ func (s *UnitTestSuite) TestGetUserByMail() {
 	s.Assertions.Nil(err)
 	s.Assertions.NotNil(user)
 	s.Assertions.Equal(user, newUser)
-}
-
-func TestUnitTestSuite(t *testing.T) {
-	suite.Run(t, new(UnitTestSuite))
 }
 
 func (s *UnitTestSuite) createDummyCollection(id uuid.UUID, userID uuid.UUID, contractAddress string) *models.Collection {
@@ -140,4 +136,8 @@ func (s *UnitTestSuite) TestCreateCollection() {
 	s.Assertions.Nil(err)
 	s.Assertions.NotNil(collection)
 	s.Assertions.Equal(collection, newCollection)
+}
+
+func TestUnitTestSuite(t *testing.T) {
+	suite.Run(t, new(UnitTestSuite))
 }
