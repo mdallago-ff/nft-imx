@@ -31,6 +31,6 @@ func (i ImxDummy) TransferToken(ctx context.Context, info *imx.TransferInformati
 	return nil
 }
 
-func (i ImxDummy) CreateOrder(ctx context.Context, info *imx.OrderInformation) error {
-	return nil
+func (i ImxDummy) CreateOrder(ctx context.Context, info *imx.OrderInformation) (int32, error) {
+	return 0, nil
 }

@@ -35,7 +35,7 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		Amount:          amount,
 	}
 
-	err = h.imx.CreateOrder(r.Context(), &info)
+	orderID, err := h.imx.CreateOrder(r.Context(), &info)
 	if err != nil {
 		log.Error("error creating order", err)
 		err = render.Render(w, r, ErrInvalidRequest(err))
@@ -46,7 +46,7 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	err = render.Render(w, r, NewOrderResponse(data.TokenID))
+	err = render.Render(w, r, NewOrderResponse(orderID))
 	if err != nil {
 		log.Error("error rendering response", err)
 	}
@@ -71,11 +71,11 @@ func (a *OrderRequest) Bind(r *http.Request) error {
 }
 
 type OrderResponse struct {
-	TokenID string `json:"token_id"`
+	OrderID string `json:"order_id"`
 }
 
-func NewOrderResponse(id string) *OrderResponse {
-	resp := &OrderResponse{TokenID: id}
+func NewOrderResponse(id int32) *OrderResponse {
+	resp := &OrderResponse{OrderID: string(id)}
 	return resp
 }
 

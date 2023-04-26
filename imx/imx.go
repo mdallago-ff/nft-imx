@@ -20,7 +20,7 @@ type Client interface {
 	CreateMetadata(ctx context.Context, info *MetadataInformation) error
 	CreateToken(ctx context.Context, info *MintInformation) error
 	TransferToken(ctx context.Context, info *TransferInformation) error
-	CreateOrder(ctx context.Context, info *OrderInformation) error
+	CreateOrder(ctx context.Context, info *OrderInformation) (int32, error)
 }
 
 type IMX struct {
@@ -313,7 +313,7 @@ func (i *IMX) TransferToken(ctx context.Context, info *TransferInformation) erro
 	return nil
 }
 
-func (i *IMX) CreateOrder(ctx context.Context, info *OrderInformation) error {
+func (i *IMX) CreateOrder(ctx context.Context, info *OrderInformation) (int32, error) {
 	ethAddress := i.l1signer.GetAddress()                                    // Address of the user listing for sale.
 	sellToken := imx.SignableERC721Token(info.TokenID, info.ContractAddress) // NFT Token
 	buyToken := imx.SignableETHToken()                                       // The listed asset can be bought with Ethereum
@@ -330,15 +330,15 @@ func (i *IMX) CreateOrder(ctx context.Context, info *OrderInformation) error {
 	// Create order will list the given asset for sale.
 	createOrderResponse, err := i.client.CreateOrder(ctx, i.l1signer, i.l2signer, createOrderRequest)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	createOrderResponseStr, err := prettyStruct(createOrderResponse)
 	if err != nil {
-		return err
+		return -1, err
 	}
 	log.Printf("CreateOrder response:\n%v\n", createOrderResponseStr)
-	return nil
+	return createOrderResponse.OrderId, nil
 }
 
 //

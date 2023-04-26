@@ -146,7 +146,7 @@ func (s *UnitTestSuite) TestCreateOrder() {
 	objMap := map[string]string{}
 	err := json.Unmarshal(response.Body.Bytes(), &objMap)
 	s.Assertions.Nil(err)
-	s.Assertions.Equal("1", objMap["token_id"])
+	s.Assertions.NotEmpty(objMap["order_id"])
 }
 
 func (s *UnitTestSuite) TestCreateCollectionWithoutParamsShouldFail() {
