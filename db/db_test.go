@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"nft/models"
+	"nft/test"
 	"testing"
 )
 
@@ -27,7 +28,7 @@ func (s *UnitTestSuite) SetupTest() {
 }
 
 func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
-	err := s.migrations.Down(context.Background())
+	err := s.migrations.Reset(context.Background())
 	s.Assertions.Nil(err)
 }
 
@@ -38,24 +39,13 @@ func (s *UnitTestSuite) TestGetUser() {
 	s.Assertions.Nil(user)
 }
 
-func (s *UnitTestSuite) createDummyUser(id uuid.UUID, mail string) *models.User {
-	return &models.User{
-		ID:      id,
-		ApiKey:  uuid.NewString(),
-		Mail:    mail,
-		Private: "",
-		Public:  "",
-		Address: "",
-	}
-}
-
 func (s *UnitTestSuite) TestCreateUser() {
 	id := uuid.New()
 	user, err := s.db.GetUser(id)
 	s.Assertions.Nil(err)
 	s.Assertions.Nil(user)
 
-	newUser := s.createDummyUser(id, "test@test.com")
+	newUser := test.CreateDummyUser(id, "test@test.com")
 
 	err = s.db.CreateUser(newUser)
 	s.Assertions.Nil(err)
@@ -72,7 +62,7 @@ func (s *UnitTestSuite) TestUpdateUser() {
 	s.Assertions.Nil(err)
 	s.Assertions.Nil(user)
 
-	newUser := s.createDummyUser(id, "test@test.com")
+	newUser := test.CreateDummyUser(id, "test@test.com")
 	err = s.db.CreateUser(newUser)
 	s.Assertions.Nil(err)
 
@@ -112,14 +102,6 @@ func (s *UnitTestSuite) TestGetUserByMail() {
 	s.Assertions.Equal(user, newUser)
 }
 
-func (s *UnitTestSuite) createDummyCollection(id uuid.UUID, userID uuid.UUID, contractAddress string) *models.Collection {
-	return &models.Collection{
-		ID:              id,
-		UserID:          userID,
-		ContractAddress: contractAddress,
-	}
-}
-
 func (s *UnitTestSuite) TestCreateCollection() {
 	id := uuid.New()
 	collection, err := s.db.GetCollection(id)
@@ -127,7 +109,7 @@ func (s *UnitTestSuite) TestCreateCollection() {
 	s.Assertions.Nil(collection)
 
 	userID := uuid.New()
-	newCollection := s.createDummyCollection(id, userID, "test address")
+	newCollection := test.CreateDummyCollection(id, userID, "test address")
 
 	err = s.db.CreateCollection(newCollection)
 	s.Assertions.Nil(err)
@@ -136,6 +118,24 @@ func (s *UnitTestSuite) TestCreateCollection() {
 	s.Assertions.Nil(err)
 	s.Assertions.NotNil(collection)
 	s.Assertions.Equal(collection, newCollection)
+}
+
+func (s *UnitTestSuite) TestCreateToken() {
+	id := uuid.New()
+	token, err := s.db.GetToken(id)
+	s.Assertions.Nil(err)
+	s.Assertions.Nil(token)
+
+	collectionID := uuid.New()
+	newToken := test.CreateDummyToken(id, collectionID, "1")
+
+	err = s.db.CreateToken(newToken)
+	s.Assertions.Nil(err)
+
+	token, err = s.db.GetToken(id)
+	s.Assertions.Nil(err)
+	s.Assertions.NotNil(token)
+	s.Assertions.Equal(token, newToken)
 }
 
 func TestUnitTestSuite(t *testing.T) {

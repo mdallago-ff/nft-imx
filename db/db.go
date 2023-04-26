@@ -96,3 +96,28 @@ func (d *DB) GetCollection(id uuid.UUID) (*models.Collection, error) {
 
 	return &collection, nil
 }
+
+func (d *DB) CreateToken(token *models.Token) error {
+	//save database
+	return d.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&token).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (d *DB) GetToken(id uuid.UUID) (*models.Token, error) {
+	var token models.Token
+	if err := d.db.First(&token, id).Error; err != nil {
+		switch err {
+		case gorm.ErrRecordNotFound:
+			return nil, nil
+		default:
+			return nil, err
+		}
+	}
+
+	return &token, nil
+}

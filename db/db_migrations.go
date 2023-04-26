@@ -35,6 +35,43 @@ func (a Migrations) Down(ctx context.Context) error {
 	return a.executeFunc(ctx, goose.Down)
 }
 
+func (a Migrations) Reset(ctx context.Context) error {
+	goose.SetBaseFS(migrations)
+
+	db, err := sql.Open("postgres", a.dsn)
+	if err != nil {
+		return err
+	}
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		return err
+	}
+
+	log.Info("acquiring lock to run migrations")
+	if _, err = db.Exec("select pg_advisory_lock($1)", migrationLock); err != nil {
+		return err
+	}
+	log.Info("migration lock acquired")
+
+	defer func() {
+		if _, err = db.Exec("select pg_advisory_unlock($1)", migrationLock); err != nil {
+			panic(err)
+		}
+		log.Info("migration lock released")
+		//close connection used for applying migrations
+		if err := db.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	log.Info("applying migrations...")
+	if err := goose.DownTo(db, "migrations", 0); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (a Migrations) executeFunc(ctx context.Context, funcToExecute gooseFunc) error {
 	//goose.SetLogger(utils.Logger(ctx))
 	goose.SetBaseFS(migrations)

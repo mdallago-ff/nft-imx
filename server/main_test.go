@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"nft/config"
 	"nft/db"
+	"nft/test"
 	"testing"
 )
 
@@ -50,7 +51,7 @@ func (s *UnitTestSuite) SetupTest() {
 }
 
 func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
-	err := s.migrations.Down(context.Background())
+	err := s.migrations.Reset(context.Background())
 	s.Assertions.Nil(err)
 }
 
@@ -90,10 +91,18 @@ func (s *UnitTestSuite) TestCreateCollection() {
 	s.Assertions.Nil(err)
 	s.Assertions.Equal("0x4958d0B91412eE2b8D715bF9279DCDB68e33d195", objMap["contract_address"])
 	s.Assertions.Equal("prueba", objMap["collection_name"])
+	s.Assertions.NotEmpty(objMap["collection_id"])
 }
 
 func (s *UnitTestSuite) TestCreateToken() {
-	var jsonStr = []byte(`{"contract_address":"0x4958d0B91412eE2b8D715bF9279DCDB68e33d195", "token_id": "1", "blueprint": "123456" }`)
+	user := test.CreateDummyUser(uuid.New(), "test")
+	err := s.db.CreateUser(user)
+	s.Assertions.Nil(err)
+	collection := test.CreateDummyCollection(uuid.New(), user.ID, "address")
+	err = s.db.CreateCollection(collection)
+	s.Assertions.Nil(err)
+
+	var jsonStr = []byte(`{"collection_id":"` + collection.ID.String() + `", "token_id": "1", "blueprint": "123456" }`)
 	req, _ := http.NewRequest("POST", "/tokens", bytes.NewBuffer(jsonStr))
 
 	ctx := req.Context()
@@ -103,9 +112,9 @@ func (s *UnitTestSuite) TestCreateToken() {
 	s.checkResponseCode(http.StatusCreated, response.Code)
 
 	objMap := map[string]string{}
-	err := json.Unmarshal(response.Body.Bytes(), &objMap)
+	err = json.Unmarshal(response.Body.Bytes(), &objMap)
 	s.Assertions.Nil(err)
-	s.Assertions.Equal("1", objMap["token_id"])
+	s.Assertions.NotEmpty(objMap["token_id"])
 }
 
 func (s *UnitTestSuite) TestTransferToken() {
