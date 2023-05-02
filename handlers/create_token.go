@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/go-chi/oauth"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
 	"net/http"
@@ -43,6 +44,26 @@ func (h *Handler) CreateToken(w http.ResponseWriter, r *http.Request) {
 	if collection == nil {
 		err = errors.New("collection missing")
 		log.Error("error getting collection", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	userID, err := uuid.Parse(r.Context().Value(oauth.CredentialContext).(string))
+	if err != nil {
+		log.Error("error parsing user", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	if collection.UserID != userID {
+		err = errors.New("invalid collection")
+		log.Error("invalid collection", err)
 		err = render.Render(w, r, ErrInvalidRequest(err))
 		if err != nil {
 			log.Error("error rendering response", err)

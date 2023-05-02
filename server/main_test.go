@@ -106,7 +106,7 @@ func (s *UnitTestSuite) TestCreateToken() {
 	req, _ := http.NewRequest("POST", "/tokens", bytes.NewBuffer(jsonStr))
 
 	ctx := req.Context()
-	ctx = context.WithValue(ctx, oauth.CredentialContext, uuid.NewString())
+	ctx = context.WithValue(ctx, oauth.CredentialContext, user.ID.String())
 	response := s.executeRequest(req.WithContext(ctx))
 
 	s.checkResponseCode(http.StatusCreated, response.Code)
@@ -118,19 +118,29 @@ func (s *UnitTestSuite) TestCreateToken() {
 }
 
 func (s *UnitTestSuite) TestTransferToken() {
-	var jsonStr = []byte(`{"contract_address":"0x3e421D98cFf855520cA521385d85feBbAf5e1332", "token_id":"1", "receiver_address": "0x18b1ceDC9803096D970f52260D1835F07D7e448C"}`)
+	user := test.CreateDummyUser(uuid.New(), "test")
+	err := s.db.CreateUser(user)
+	s.Assertions.Nil(err)
+	collection := test.CreateDummyCollection(uuid.New(), user.ID, "address")
+	err = s.db.CreateCollection(collection)
+	s.Assertions.Nil(err)
+	token := test.CreateDummyToken(uuid.New(), collection.ID, "1")
+	err = s.db.CreateToken(token)
+	s.Assertions.Nil(err)
+
+	var jsonStr = []byte(`{"collection_id":"` + collection.ID.String() + `", "token_id":"` + token.ID.String() + `", "receiver_address": "0x18b1ceDC9803096D970f52260D1835F07D7e448C"}`)
 	req, _ := http.NewRequest("POST", "/transfers", bytes.NewBuffer(jsonStr))
 
 	ctx := req.Context()
-	ctx = context.WithValue(ctx, oauth.CredentialContext, uuid.NewString())
+	ctx = context.WithValue(ctx, oauth.CredentialContext, user.ID.String())
 	response := s.executeRequest(req.WithContext(ctx))
 
 	s.checkResponseCode(http.StatusCreated, response.Code)
 
 	objMap := map[string]string{}
-	err := json.Unmarshal(response.Body.Bytes(), &objMap)
+	err = json.Unmarshal(response.Body.Bytes(), &objMap)
 	s.Assertions.Nil(err)
-	s.Assertions.Equal("1", objMap["token_id"])
+	s.Assertions.Equal(token.ID.String(), objMap["token_id"])
 }
 
 func (s *UnitTestSuite) TestCreateOrder() {
