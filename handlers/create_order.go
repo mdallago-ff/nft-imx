@@ -3,7 +3,9 @@ package handlers
 import (
 	"errors"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/go-chi/oauth"
 	"github.com/go-chi/render"
+	"github.com/google/uuid"
 	"net/http"
 	"nft/imx"
 	"strconv"
@@ -29,8 +31,98 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	collectionID, err := uuid.Parse(data.CollectionID)
+	if err != nil {
+		log.Error("error parsing collection", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	collection, err := h.db.GetCollection(collectionID)
+	if err != nil {
+		log.Error("error getting collection", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	if collection == nil {
+		err = errors.New("collection missing")
+		log.Error("error getting collection", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	userID, err := uuid.Parse(r.Context().Value(oauth.CredentialContext).(string))
+	if err != nil {
+		log.Error("error parsing user", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	if collection.UserID != userID {
+		err = errors.New("invalid collection")
+		log.Error("invalid collection", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	tokenID, err := uuid.Parse(data.TokenID)
+	if err != nil {
+		log.Error("error parsing token", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	token, err := h.db.GetToken(tokenID)
+	if err != nil {
+		log.Error("error getting token", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	if token == nil {
+		err = errors.New("token missing")
+		log.Error("error getting token", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	if token.CollectionID != collectionID {
+		err = errors.New("invalid token")
+		log.Error("invalid token", err)
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
 	info := imx.OrderInformation{
-		ContractAddress: data.ContractAddress,
+		ContractAddress: collection.ContractAddress,
 		TokenID:         data.TokenID,
 		Amount:          amount,
 	}
@@ -53,13 +145,13 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 type OrderRequest struct {
-	ContractAddress string `json:"contract_address"`
-	TokenID         string `json:"token_id"`
-	Amount          string `json:"amount"`
+	CollectionID string `json:"collection_id"`
+	TokenID      string `json:"token_id"`
+	Amount       string `json:"amount"`
 }
 
 func (a *OrderRequest) Bind(r *http.Request) error {
-	if len(a.ContractAddress) == 0 {
+	if len(a.CollectionID) == 0 {
 		return errors.New("missing required fields")
 	}
 
