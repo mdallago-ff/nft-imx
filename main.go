@@ -13,29 +13,29 @@ import (
 func main() {
 	log.Println("Starting NFT Marketplace")
 
-	config := config.GetConfig()
+	settings := config.GetConfig()
 
-	log.Printf("Port: %s", config.Port)
-	log.Printf("DebugMode: %t", config.DebugMode)
+	log.Printf("Port: %s", settings.Port)
+	log.Printf("DebugMode: %t", settings.DebugMode)
 
-	migrations := db.NewMigrations(config.DSN)
+	migrations := db.NewMigrations(settings.DSN)
 	err := migrations.Up(context.TODO())
 	if err != nil {
 		log.Fatal("Error applying migrations")
 	}
 
-	db, err := db.NewDB(config.DSN)
+	newDB, err := db.NewDB(settings.DSN)
 	if err != nil {
 		log.Fatal("error configuring DB", err)
 	}
 
-	imx := imx.NewIMX(config.AlchemyAPIKey, config.L1SignerPrivateKey, config.StarkPrivateKey, config.ProjectID)
-	defer imx.Close()
+	imxClient := imx.NewIMX(settings.AlchemyAPIKey, settings.L1SignerPrivateKey, settings.StarkPrivateKey, settings.ProjectID)
+	defer imxClient.Close()
 
-	server := server.NewServer(config, db, imx)
-	server.Configure()
+	newServer := server.NewServer(settings, newDB, imxClient)
+	newServer.Configure()
 
-	err = http.ListenAndServe(":"+config.Port, server.Router)
+	err = http.ListenAndServe(":"+settings.Port, newServer.Router)
 	if err != nil {
 		log.Fatal("error stopping web server", err)
 	}

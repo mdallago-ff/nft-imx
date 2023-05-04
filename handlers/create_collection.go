@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"errors"
+	"net/http"
+	"nft/imx"
+	"nft/models"
+
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-chi/oauth"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
-	"net/http"
-	"nft/imx"
-	"nft/models"
 )
 
 func (h *Handler) CreateCollection(w http.ResponseWriter, r *http.Request) {

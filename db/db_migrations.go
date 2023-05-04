@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+
 	"github.com/ethereum/go-ethereum/log"
 	_ "github.com/lib/pq" //required for sql library
 	"github.com/pressly/goose/v3"

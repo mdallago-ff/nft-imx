@@ -3,14 +3,15 @@ package imx
 import (
 	"context"
 	"encoding/json"
-	"github.com/immutable/imx-core-sdk-golang/imx"
-	"github.com/immutable/imx-core-sdk-golang/imx/api"
-	"github.com/immutable/imx-core-sdk-golang/imx/signers/ethereum"
-	"github.com/immutable/imx-core-sdk-golang/imx/signers/stark"
 	"log"
 	"math/big"
 	"nft/models"
 	"strconv"
+
+	"github.com/immutable/imx-core-sdk-golang/imx"
+	"github.com/immutable/imx-core-sdk-golang/imx/api"
+	"github.com/immutable/imx-core-sdk-golang/imx/signers/ethereum"
+	"github.com/immutable/imx-core-sdk-golang/imx/signers/stark"
 )
 
 type Client interface {

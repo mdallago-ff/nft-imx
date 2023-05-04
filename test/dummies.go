@@ -1,8 +1,9 @@
 package test
 
 import (
-	"github.com/google/uuid"
 	"nft/models"
+
+	"github.com/google/uuid"
 )
 
 func CreateDummyUser(id uuid.UUID, mail string) *models.User {

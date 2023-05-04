@@ -2,11 +2,12 @@ package db
 
 import (
 	"context"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
 	"nft/models"
 	"nft/test"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
 )
 
 var dsn = "host=localhost user=postgres password=postgres dbname=nft_test port=5432 sslmode=disable"

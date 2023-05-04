@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/go-chi/oauth"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
 	"nft/config"
 	"nft/db"
 	"nft/test"
 	"testing"
+
+	"github.com/go-chi/oauth"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
 )
 
 var dsn = "host=localhost user=postgres password=postgres dbname=nft_test port=5432 sslmode=disable"
@@ -40,13 +41,13 @@ func (s *UnitTestSuite) SetupTest() {
 	migrations := db.NewMigrations(dsn)
 	err := migrations.Up(context.Background())
 	s.Assertions.Nil(err)
-	db, err := db.NewDB(dsn)
+	newDB, err := db.NewDB(dsn)
 	s.Assertions.Nil(err)
-	s.db = db
+	s.db = newDB
 	s.migrations = migrations
-	config := config.GetConfig()
-	config.DebugMode = true
-	s.server = NewServer(config, db, ImxDummy{})
+	settings := config.GetConfig()
+	settings.DebugMode = true
+	s.server = NewServer(settings, newDB, ImxDummy{})
 	s.server.Configure()
 }
 

@@ -3,10 +3,11 @@ package auth
 import (
 	"crypto/subtle"
 	"errors"
-	"github.com/go-chi/oauth"
-	"github.com/google/uuid"
 	"net/http"
 	"nft/db"
+
+	"github.com/go-chi/oauth"
+	"github.com/google/uuid"
 )
 
 // UserVerifier provides user credentials verifier for testing.

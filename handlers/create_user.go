@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"errors"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/go-chi/render"
-	"github.com/google/uuid"
 	"net/http"
 	"nft/keys"
 	"nft/models"
+
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/go-chi/render"
+	"github.com/google/uuid"
 )
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {

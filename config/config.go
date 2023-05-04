@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/jinzhu/configor"
 	"log"
+
+	"github.com/jinzhu/configor"
 )
 
 type Settings struct {

@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"errors"
+	"net/http"
+	"nft/imx"
+
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-chi/oauth"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
-	"net/http"
-	"nft/imx"
 )
 
 func (h *Handler) TransferToken(w http.ResponseWriter, r *http.Request) {

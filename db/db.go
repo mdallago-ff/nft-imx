@@ -1,10 +1,11 @@
 package db
 
 import (
+	"nft/models"
+
 	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"nft/models"
 )
 
 type DB struct {
