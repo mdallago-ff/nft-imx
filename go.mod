@@ -12,6 +12,7 @@ require (
 	github.com/jinzhu/configor v1.2.1
 	github.com/lib/pq v1.10.7
 	github.com/pressly/goose/v3 v3.10.0
+	github.com/stretchr/testify v1.8.2
 	gorm.io/driver/postgres v1.5.0
 	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
 )
@@ -41,8 +42,6 @@ require (
 	github.com/runeaune/bitcoin-base58 v0.0.0-20151205172436-67fa270fe8dd // indirect
 	github.com/runeaune/bitcoin-crypto v0.0.0-20151230101850-703c6210df67 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
-	github.com/stretchr/testify v1.8.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.5.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
