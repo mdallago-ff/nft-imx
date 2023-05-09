@@ -170,6 +170,26 @@ func (s *UnitTestSuite) TestCreateOrder() {
 	s.Assertions.NotEmpty(objMap["order_id"])
 }
 
+func (s *UnitTestSuite) TestCreateDeposit() {
+	user := test.CreateDummyUser(uuid.New(), "test")
+	err := s.db.CreateUser(user)
+	s.Assertions.Nil(err)
+
+	var jsonStr = []byte(`{"amount_wei":"1000000000"}`)
+	req, _ := http.NewRequest("POST", "/deposits", bytes.NewBuffer(jsonStr))
+
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, oauth.CredentialContext, user.ID.String())
+	response := s.executeRequest(req.WithContext(ctx))
+
+	s.checkResponseCode(http.StatusCreated, response.Code)
+
+	objMap := map[string]string{}
+	err = json.Unmarshal(response.Body.Bytes(), &objMap)
+	s.Assertions.Nil(err)
+	s.Assertions.NotEmpty(objMap["tx_hash"])
+}
+
 func (s *UnitTestSuite) TestCreateCollectionWithoutParamsShouldFail() {
 	req, _ := http.NewRequest("POST", "/collections", nil)
 	response := s.executeRequest(req)
@@ -190,6 +210,12 @@ func (s *UnitTestSuite) TestTransferTokenWithoutParamsShouldFail() {
 
 func (s *UnitTestSuite) TestCreateOrderWithoutParamsShouldFail() {
 	req, _ := http.NewRequest("POST", "/orders", nil)
+	response := s.executeRequest(req)
+	s.checkResponseCode(http.StatusInternalServerError, response.Code)
+}
+
+func (s *UnitTestSuite) TestCreateDepositWithoutParamsShouldFail() {
+	req, _ := http.NewRequest("POST", "/deposits", nil)
 	response := s.executeRequest(req)
 	s.checkResponseCode(http.StatusInternalServerError, response.Code)
 }

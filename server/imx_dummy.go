@@ -34,3 +34,7 @@ func (i ImxDummy) TransferToken(ctx context.Context, info *imx.TransferInformati
 func (i ImxDummy) CreateOrder(ctx context.Context, info *imx.OrderInformation) (int32, error) {
 	return 0, nil
 }
+
+func (i ImxDummy) CreateEthDeposit(ctx context.Context, info *imx.CreateDepositInformation) (string, error) {
+	return "hash", nil
+}

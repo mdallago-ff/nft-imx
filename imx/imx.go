@@ -22,6 +22,7 @@ type Client interface {
 	CreateToken(ctx context.Context, info *MintInformation) error
 	TransferToken(ctx context.Context, info *TransferInformation) error
 	CreateOrder(ctx context.Context, info *OrderInformation) (int32, error)
+	CreateEthDeposit(ctx context.Context, info *CreateDepositInformation) (string, error)
 }
 
 type IMX struct {
@@ -68,7 +69,8 @@ type OrderInformation struct {
 	Amount          uint64
 }
 
-type CreateDeposit struct {
+type CreateDepositInformation struct {
+	User             *models.User
 	DepositAmountWei string
 }
 
@@ -342,6 +344,26 @@ func (i *IMX) CreateOrder(ctx context.Context, info *OrderInformation) (int32, e
 	return createOrderResponse.OrderId, nil
 }
 
+func (i *IMX) CreateEthDeposit(ctx context.Context, info *CreateDepositInformation) (string, error) {
+	// Eth Deposit
+	ethAmountInWei, err := strconv.ParseUint(info.DepositAmountWei, 10, 64)
+	if err != nil {
+		return "", err
+	}
+
+	l1signer, err := ethereum.NewSigner(info.User.Private, i.chainId)
+	if err != nil {
+		return "", err
+	}
+
+	transaction, err := imx.NewETHDeposit(ethAmountInWei).Deposit(ctx, i.client, l1signer, nil)
+	if err != nil {
+		return "", err
+	}
+	log.Println("Eth Deposit transaction hash:", transaction.Hash())
+	return transaction.Hash().String(), nil
+}
+
 //
 //func trimHexPrefix(hexString string) (string, error) {
 //	if len(hexString) < 2 {
@@ -463,20 +485,7 @@ func (i *IMX) CreateOrder(ctx context.Context, info *OrderInformation) (int32, e
 //	log.Printf("CreateOrder response:\n%v\n", createOrderResponseStr)
 //}
 //
-//func createEthDeposit(c *imx.Client, l1signer imx.L1Signer, info *CreateDeposit) {
-//	ctx := context.TODO()
-//	// Eth Deposit
-//	ethAmountInWei, err := strconv.ParseUint(info.DepositAmountWei, 10, 64)
-//	if err != nil {
-//		log.Panicf("error in converting ethAmountInWei from string to int: %v\n", err)
-//	}
-//
-//	transaction, err := imx.NewETHDeposit(ethAmountInWei).Deposit(ctx, c, l1signer, nil)
-//	if err != nil {
-//		log.Panicf("Eth deposit: %v", err)
-//	}
-//	log.Println("Eth Deposit transaction hash:", transaction.Hash())
-//}
+
 //
 //func createTrade(c *imx.Client, l1signer imx.L1Signer, l2signer imx.L2Signer, orderID int32) {
 //	ctx := context.TODO()
