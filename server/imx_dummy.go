@@ -38,3 +38,7 @@ func (i ImxDummy) CreateOrder(ctx context.Context, info *imx.OrderInformation) (
 func (i ImxDummy) CreateEthDeposit(ctx context.Context, info *imx.CreateDepositInformation) (string, error) {
 	return "hash", nil
 }
+
+func (i ImxDummy) CreateTrade(ctx context.Context, info *imx.CreateTradeInformation) (int32, error) {
+	return 0, nil
+}

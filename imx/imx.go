@@ -23,6 +23,7 @@ type Client interface {
 	TransferToken(ctx context.Context, info *TransferInformation) error
 	CreateOrder(ctx context.Context, info *OrderInformation) (int32, error)
 	CreateEthDeposit(ctx context.Context, info *CreateDepositInformation) (string, error)
+	CreateTrade(ctx context.Context, info *CreateTradeInformation) (int32, error)
 }
 
 type IMX struct {
@@ -74,13 +75,18 @@ type CreateDepositInformation struct {
 	DepositAmountWei string
 }
 
+type CreateTradeInformation struct {
+	User    *models.User
+	OrderID int32
+}
+
 type TransferInformation struct {
 	TokenID         string
 	ContractAddress string
 	ReceiverAddress string
 }
 
-func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey string, projectID int32) Client {
+func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey string, projectID int32) (Client, error) {
 	apiConfiguration := api.NewConfiguration()
 	cfg := imx.Config{
 		APIConfig:     apiConfiguration,
@@ -89,17 +95,20 @@ func NewIMX(alchemyAPIKey string, l1SignerPrivateKey string, starkPrivateKey str
 	}
 	client, err := imx.NewClient(&cfg)
 	if err != nil {
-		log.Panicf("error in NewIMX: %v\n", err)
+		return nil, err
 	}
 
 	l1signer, err := ethereum.NewSigner(l1SignerPrivateKey, cfg.ChainID)
 	if err != nil {
-		log.Panicf("error in creating L1Signer: %v\n", err)
+		return nil, err
 	}
 
-	l2signer, _ := newStarkSigner(starkPrivateKey)
+	l2signer, _, err := newStarkSigner(starkPrivateKey)
+	if err != nil {
+		return nil, err
+	}
 
-	return &IMX{client, l1signer, l2signer, cfg.ChainID, projectID}
+	return &IMX{client, l1signer, l2signer, cfg.ChainID, projectID}, nil
 }
 
 func (i *IMX) CreateUser(ctx context.Context, user *models.User) (string, error) {
@@ -108,7 +117,10 @@ func (i *IMX) CreateUser(ctx context.Context, user *models.User) (string, error)
 		return "", err
 	}
 
-	l2signer, starkKey := newStarkSigner("")
+	l2signer, starkKey, err := newStarkSigner("")
+	if err != nil {
+		return "", err
+	}
 
 	response, err := i.client.RegisterOffchain(ctx, l1signer, l2signer, user.Mail)
 	if err != nil {
@@ -134,21 +146,20 @@ func (i *IMX) Close() {
 	i.client.EthClient.Close()
 }
 
-func newStarkSigner(privateStarkKeyStr string) (imx.L2Signer, string) {
+func newStarkSigner(privateStarkKeyStr string) (imx.L2Signer, string, error) {
 	var err error
 	if privateStarkKeyStr == "" {
 		privateStarkKeyStr, err = stark.GenerateKey()
-		log.Println("Stark Private key: ", privateStarkKeyStr)
 		if err != nil {
-			log.Panicf("error in Generating Stark Private Key: %v\n", err)
+			return nil, "", err
 		}
 	}
 
 	l2signer, err := stark.NewSigner(privateStarkKeyStr)
 	if err != nil {
-		log.Panicf("error in creating StarkSigner: %v\n", err)
+		return nil, "", err
 	}
-	return l2signer, privateStarkKeyStr
+	return l2signer, privateStarkKeyStr, nil
 }
 
 func prettyStruct(data interface{}) (string, error) {
@@ -364,6 +375,38 @@ func (i *IMX) CreateEthDeposit(ctx context.Context, info *CreateDepositInformati
 	return transaction.Hash().String(), nil
 }
 
+func (i *IMX) CreateTrade(ctx context.Context, info *CreateTradeInformation) (int32, error) {
+	l1signer, err := ethereum.NewSigner(info.User.Private, i.chainId)
+	if err != nil {
+		return -1, err
+	}
+
+	l2signer, _, err := newStarkSigner(info.User.StarkKey)
+	if err != nil {
+		return -1, err
+	}
+
+	tradeRequest := api.GetSignableTradeRequest{
+		Fees:    nil,
+		OrderId: info.OrderID,
+	}
+
+	tradeRequest.SetExpirationTimestamp(0)
+	tradeResponse, err := i.client.CreateTrade(ctx, l1signer, l2signer, tradeRequest)
+
+	if err != nil {
+		return -1, err
+	}
+
+	val, err := prettyStruct(tradeResponse)
+	if err != nil {
+		return -1, err
+	}
+
+	log.Printf("trade response:\n%s\n", val)
+	return tradeResponse.TradeId, nil
+}
+
 //
 //func trimHexPrefix(hexString string) (string, error) {
 //	if len(hexString) < 2 {
@@ -487,22 +530,7 @@ func (i *IMX) CreateEthDeposit(ctx context.Context, info *CreateDepositInformati
 //
 
 //
-//func createTrade(c *imx.Client, l1signer imx.L1Signer, l2signer imx.L2Signer, orderID int32) {
-//	ctx := context.TODO()
-//	tradeRequest := api.GetSignableTradeRequest{
-//		Fees:    nil,
-//		OrderId: orderID,
-//	}
-//	tradeRequest.SetExpirationTimestamp(0)
-//	tradeResponse, err := c.CreateTrade(ctx, l1signer, l2signer, tradeRequest)
-//
-//	if err != nil {
-//		log.Panicf("error calling trades workflow: %v", err)
-//	}
-//
-//	val, _ := json.MarshalIndent(tradeResponse, "", "  ")
-//	log.Printf("trade response:\n%s\n", val)
-//}
+
 //
 //func createEthWithdrawal(c *imx.Client, l1signer imx.L1Signer, l2signer imx.L2Signer, amount string) {
 //	ctx := context.TODO()

@@ -29,7 +29,11 @@ func main() {
 		log.Fatal("error configuring DB", err)
 	}
 
-	imxClient := imx.NewIMX(settings.AlchemyAPIKey, settings.L1SignerPrivateKey, settings.StarkPrivateKey, settings.ProjectID)
+	imxClient, err := imx.NewIMX(settings.AlchemyAPIKey, settings.L1SignerPrivateKey, settings.StarkPrivateKey, settings.ProjectID)
+	if err != nil {
+		log.Fatal("error configuring imx", err)
+	}
+
 	defer imxClient.Close()
 
 	newServer := server.NewServer(settings, newDB, imxClient)
