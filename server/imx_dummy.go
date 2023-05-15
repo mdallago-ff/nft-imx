@@ -42,3 +42,11 @@ func (i ImxDummy) CreateEthDeposit(ctx context.Context, info *imx.CreateDepositI
 func (i ImxDummy) CreateTrade(ctx context.Context, info *imx.CreateTradeInformation) (int32, error) {
 	return 0, nil
 }
+
+func (i ImxDummy) CreateEthWithdrawal(ctx context.Context, info *imx.CreateWithdrawalInformation) (int32, error) {
+	return 0, nil
+}
+
+func (i ImxDummy) CompleteEthWithdrawal(ctx context.Context, info *imx.CompleteWithdrawalInformation) error {
+	return nil
+}

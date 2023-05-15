@@ -24,6 +24,8 @@ type Client interface {
 	CreateOrder(ctx context.Context, info *OrderInformation) (int32, error)
 	CreateEthDeposit(ctx context.Context, info *CreateDepositInformation) (string, error)
 	CreateTrade(ctx context.Context, info *CreateTradeInformation) (int32, error)
+	CreateEthWithdrawal(ctx context.Context, info *CreateWithdrawalInformation) (int32, error)
+	CompleteEthWithdrawal(ctx context.Context, info *CompleteWithdrawalInformation) error
 }
 
 type IMX struct {
@@ -78,6 +80,16 @@ type CreateDepositInformation struct {
 type CreateTradeInformation struct {
 	User    *models.User
 	OrderID int32
+}
+
+type CreateWithdrawalInformation struct {
+	User   *models.User
+	Amount string
+}
+
+type CompleteWithdrawalInformation struct {
+	User         *models.User
+	WithdrawalID int32
 }
 
 type TransferInformation struct {
@@ -407,6 +419,67 @@ func (i *IMX) CreateTrade(ctx context.Context, info *CreateTradeInformation) (in
 	return tradeResponse.TradeId, nil
 }
 
+func (i *IMX) CreateEthWithdrawal(ctx context.Context, info *CreateWithdrawalInformation) (int32, error) {
+	ethAmountInWei, err := strconv.ParseUint(info.Amount, 10, 64)
+	if err != nil {
+		return -1, err
+	}
+
+	l1signer, err := ethereum.NewSigner(info.User.Private, i.chainId)
+	if err != nil {
+		return -1, err
+	}
+
+	l2signer, _, err := newStarkSigner(info.User.StarkKey)
+	if err != nil {
+		return -1, err
+	}
+
+	withdrawalRequest := api.GetSignableWithdrawalRequest{
+		Amount: strconv.FormatUint(ethAmountInWei, 10),
+		Token:  imx.SignableETHToken(),
+	}
+
+	response, err := i.client.PrepareWithdrawal(ctx, l1signer, l2signer, withdrawalRequest)
+	if err != nil {
+		return -1, err
+	}
+	val, _ := json.MarshalIndent(response, "", "  ")
+	log.Printf("response:\n%s\n", val)
+	return response.WithdrawalId, nil
+}
+
+func (i *IMX) CompleteEthWithdrawal(ctx context.Context, info *CompleteWithdrawalInformation) error {
+	getWithdrawalResponse, err := i.client.GetWithdrawal(ctx, strconv.FormatInt(int64(info.WithdrawalID), 10))
+	if err != nil {
+		return err
+	}
+	val, _ := json.MarshalIndent(getWithdrawalResponse, "", "  ")
+	log.Printf("response:\n%s\n", val)
+
+	if getWithdrawalResponse.RollupStatus != "confirmed" {
+		return NewWithdrawalNotReadyError(getWithdrawalResponse.RollupStatus)
+	}
+
+	l1signer, err := ethereum.NewSigner(info.User.Private, i.chainId)
+	if err != nil {
+		return err
+	}
+
+	l2signer, _, err := newStarkSigner(info.User.StarkKey)
+	if err != nil {
+		return err
+	}
+
+	ethWithdrawal := imx.NewEthWithdrawal()
+	transaction, err := ethWithdrawal.CompleteWithdrawal(ctx, i.client, l1signer, l2signer.GetPublicKey(), nil)
+	if err != nil {
+		return err
+	}
+	log.Println("transaction hash:", transaction.Hash())
+	return nil
+}
+
 //
 //func trimHexPrefix(hexString string) (string, error) {
 //	if len(hexString) < 2 {
@@ -460,10 +533,6 @@ func (i *IMX) CreateTrade(ctx context.Context, info *CreateTradeInformation) (in
 //	log.Println("Created Collection Name: ", collectionReponse.Name)
 //}
 //
-
-//
-
-//
 //func getBoolPointer(val bool) *bool {
 //	return &val
 //}
@@ -510,9 +579,6 @@ func (i *IMX) CreateTrade(ctx context.Context, info *CreateTradeInformation) (in
 //	log.Println("Created new metadata, response: ", string(val))
 //}
 //
-
-//
-
 //func getOrders(c *imx.Client) {
 //	request := api.ApiListOrdersRequest{}
 //	request = request.User("0x1E09BCED9684d94fDCa0b3c7f42F3F21D0d32b4d")
@@ -526,55 +592,6 @@ func (i *IMX) CreateTrade(ctx context.Context, info *CreateTradeInformation) (in
 //		log.Panic(err)
 //	}
 //	log.Printf("CreateOrder response:\n%v\n", createOrderResponseStr)
-//}
-//
-
-//
-
-//
-//func createEthWithdrawal(c *imx.Client, l1signer imx.L1Signer, l2signer imx.L2Signer, amount string) {
-//	ctx := context.TODO()
-//	ethAmountInWei, err := strconv.ParseUint(amount, 10, 64)
-//	if err != nil {
-//		log.Panicf("error in converting ethAmountInWei from string to int: %v\n", err)
-//	}
-//
-//	withdrawalRequest := api.GetSignableWithdrawalRequest{
-//		Amount: strconv.FormatUint(ethAmountInWei, 10),
-//		Token:  imx.SignableETHToken(),
-//	}
-//
-//	response, err := c.PrepareWithdrawal(ctx, l1signer, l2signer, withdrawalRequest)
-//	if err != nil {
-//		log.Panicf("error calling PrepareWithdrawal workflow: %v", err)
-//	}
-//	val, _ := json.MarshalIndent(response, "", "  ")
-//	log.Printf("response:\n%s\n", val)
-//
-//}
-//
-//func completeEthWithdrawal(c *imx.Client, l1signer imx.L1Signer, l2signer imx.L2Signer, withdrawalId int32) {
-//	ctx := context.TODO()
-//	for {
-//		getWithdrawalResponse, err := c.GetWithdrawal(ctx, strconv.FormatInt(int64(withdrawalId), 10))
-//		if err != nil {
-//			log.Panicf("error calling GetWithdrawal: %v", err)
-//		}
-//		val, _ := json.MarshalIndent(getWithdrawalResponse, "", "  ")
-//		log.Printf("response:\n%s\n", val)
-//
-//		if getWithdrawalResponse.RollupStatus == "confirmed" {
-//			break
-//		}
-//		time.Sleep(5 * time.Minute)
-//	}
-//
-//	ethWithdrawal := imx.NewEthWithdrawal()
-//	transaction, err := ethWithdrawal.CompleteWithdrawal(ctx, c, l1signer, l2signer.GetPublicKey(), nil)
-//	if err != nil {
-//		log.Panicf("error calling withdrawalsWorkflow.CompleteEthWithdrawal workflow: %v", err)
-//	}
-//	log.Println("transaction hash:", transaction.Hash())
 //}
 //
 //func listCollections(c *imx.Client, keyword string) {
