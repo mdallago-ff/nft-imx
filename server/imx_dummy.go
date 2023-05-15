@@ -44,7 +44,7 @@ func (i ImxDummy) CreateTrade(ctx context.Context, info *imx.CreateTradeInformat
 }
 
 func (i ImxDummy) CreateEthWithdrawal(ctx context.Context, info *imx.CreateWithdrawalInformation) (int32, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (i ImxDummy) CompleteEthWithdrawal(ctx context.Context, info *imx.CompleteWithdrawalInformation) error {

@@ -73,8 +73,8 @@ type OrderInformation struct {
 }
 
 type CreateDepositInformation struct {
-	User             *models.User
-	DepositAmountWei string
+	User      *models.User
+	AmountWei string
 }
 
 type CreateTradeInformation struct {
@@ -83,8 +83,8 @@ type CreateTradeInformation struct {
 }
 
 type CreateWithdrawalInformation struct {
-	User   *models.User
-	Amount string
+	User      *models.User
+	AmountWei string
 }
 
 type CompleteWithdrawalInformation struct {
@@ -369,7 +369,7 @@ func (i *IMX) CreateOrder(ctx context.Context, info *OrderInformation) (int32, e
 
 func (i *IMX) CreateEthDeposit(ctx context.Context, info *CreateDepositInformation) (string, error) {
 	// Eth Deposit
-	ethAmountInWei, err := strconv.ParseUint(info.DepositAmountWei, 10, 64)
+	ethAmountInWei, err := strconv.ParseUint(info.AmountWei, 10, 64)
 	if err != nil {
 		return "", err
 	}
@@ -420,7 +420,7 @@ func (i *IMX) CreateTrade(ctx context.Context, info *CreateTradeInformation) (in
 }
 
 func (i *IMX) CreateEthWithdrawal(ctx context.Context, info *CreateWithdrawalInformation) (int32, error) {
-	ethAmountInWei, err := strconv.ParseUint(info.Amount, 10, 64)
+	ethAmountInWei, err := strconv.ParseUint(info.AmountWei, 10, 64)
 	if err != nil {
 		return -1, err
 	}

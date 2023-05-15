@@ -190,6 +190,26 @@ func (s *UnitTestSuite) TestCreateDeposit() {
 	s.Assertions.NotEmpty(objMap["tx_hash"])
 }
 
+func (s *UnitTestSuite) TestCreateWithdrawal() {
+	user := test.CreateDummyUser(uuid.New(), "test")
+	err := s.db.CreateUser(user)
+	s.Assertions.Nil(err)
+
+	var jsonStr = []byte(`{"amount_wei":"1000000000"}`)
+	req, _ := http.NewRequest("POST", "/withdrawals", bytes.NewBuffer(jsonStr))
+
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, oauth.CredentialContext, user.ID.String())
+	response := s.executeRequest(req.WithContext(ctx))
+
+	s.checkResponseCode(http.StatusCreated, response.Code)
+
+	objMap := map[string]string{}
+	err = json.Unmarshal(response.Body.Bytes(), &objMap)
+	s.Assertions.Nil(err)
+	s.Assertions.NotEmpty(objMap["withdrawal_id"])
+}
+
 func (s *UnitTestSuite) TestCreateTrade() {
 	user := test.CreateDummyUser(uuid.New(), "test")
 	err := s.db.CreateUser(user)
@@ -242,6 +262,12 @@ func (s *UnitTestSuite) TestCreateDepositWithoutParamsShouldFail() {
 
 func (s *UnitTestSuite) TestCreateTradeWithoutParamsShouldFail() {
 	req, _ := http.NewRequest("POST", "/trades", nil)
+	response := s.executeRequest(req)
+	s.checkResponseCode(http.StatusInternalServerError, response.Code)
+}
+
+func (s *UnitTestSuite) TestCreateWithdrawalWithoutParamsShouldFail() {
+	req, _ := http.NewRequest("POST", "/withdrawals", nil)
 	response := s.executeRequest(req)
 	s.checkResponseCode(http.StatusInternalServerError, response.Code)
 }

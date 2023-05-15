@@ -73,5 +73,9 @@ func (s *Server) Configure() {
 		r.Route("/trades", func(r chi.Router) {
 			r.Post("/", newHandler.CreateTrade)
 		})
+
+		r.Route("/withdrawals", func(r chi.Router) {
+			r.Post("/", newHandler.CreateWithdrawal)
+		})
 	})
 }

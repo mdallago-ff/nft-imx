@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"nft/imx"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-chi/oauth"
@@ -11,8 +12,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func (h *Handler) CreateDeposit(w http.ResponseWriter, r *http.Request) {
-	data := &DepositRequest{}
+func (h *Handler) CreateWithdrawal(w http.ResponseWriter, r *http.Request) {
+	data := &WithdrawalRequest{}
 	if err := render.Bind(r, data); err != nil {
 		err = render.Render(w, r, ErrInvalidRequest(err))
 		if err != nil {
@@ -41,14 +42,14 @@ func (h *Handler) CreateDeposit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	info := imx.CreateDepositInformation{
+	info := imx.CreateWithdrawalInformation{
 		AmountWei: data.AmountWei,
 		User:      user,
 	}
 
-	hash, err := h.imx.CreateEthDeposit(r.Context(), &info)
+	withdrawalID, err := h.imx.CreateEthWithdrawal(r.Context(), &info)
 	if err != nil {
-		log.Error("error creating deposit", err)
+		log.Error("error creating withdrawal", err)
 		err = render.Render(w, r, ErrInvalidRequest(err))
 		if err != nil {
 			log.Error("error rendering response", err)
@@ -57,17 +58,17 @@ func (h *Handler) CreateDeposit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	err = render.Render(w, r, NewDepositResponse(hash))
+	err = render.Render(w, r, NewWithdrawalResponse(withdrawalID))
 	if err != nil {
 		log.Error("error rendering response", err)
 	}
 }
 
-type DepositRequest struct {
+type WithdrawalRequest struct {
 	AmountWei string `json:"amount_wei"`
 }
 
-func (a *DepositRequest) Bind(r *http.Request) error {
+func (a *WithdrawalRequest) Bind(r *http.Request) error {
 	if len(a.AmountWei) == 0 {
 		return errors.New("missing required fields")
 	}
@@ -75,15 +76,15 @@ func (a *DepositRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-type DepositResponse struct {
-	TxHash string `json:"tx_hash"`
+type WithdrawalResponse struct {
+	WithdrawalID string `json:"withdrawal_id"`
 }
 
-func NewDepositResponse(txHash string) *DepositResponse {
-	resp := &DepositResponse{TxHash: txHash}
+func NewWithdrawalResponse(withdrawalID int32) *WithdrawalResponse {
+	resp := &WithdrawalResponse{strconv.FormatInt(int64(withdrawalID), 10)}
 	return resp
 }
 
-func (rd *DepositResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (rd *WithdrawalResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
