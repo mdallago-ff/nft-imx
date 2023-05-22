@@ -2,12 +2,18 @@ package main
 
 import (
 	"context"
+	"github.com/hibiken/asynq"
 	"log"
 	"net/http"
 	"nft/config"
 	"nft/db"
 	"nft/imx"
 	"nft/server"
+	"nft/tasks"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -39,8 +45,52 @@ func main() {
 	newServer := server.NewServer(settings, newDB, imxClient)
 	newServer.Configure()
 
-	err = http.ListenAndServe(":"+settings.Port, newServer.Router)
-	if err != nil {
+	httpServer := &http.Server{Addr: ":" + settings.Port, Handler: newServer.Router}
+
+	// Server run context
+	serverCtx, serverStopCtx := context.WithCancel(context.Background())
+
+	asynqServer := asynq.NewServer(
+		asynq.RedisClientOpt{Addr: "127.0.0.1:6379"},
+		asynq.Config{},
+	)
+
+	mux := asynq.NewServeMux()
+	mux.HandleFunc(tasks.TypeCompleteWithdrawal, tasks.HandleCompleteWithdrawalTask)
+
+	if err := asynqServer.Start(mux); err != nil {
+		log.Fatalf("could not run asynq server: %v", err)
+	}
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	go func() {
+		<-sig
+
+		shutdownCtx, _ := context.WithTimeout(serverCtx, 30*time.Second)
+
+		go func() {
+			<-shutdownCtx.Done()
+			if shutdownCtx.Err() == context.DeadlineExceeded {
+				log.Fatal("graceful shutdown timed out.. forcing exit.")
+			}
+		}()
+
+		asynqServer.Stop()
+		asynqServer.Shutdown()
+
+		err := httpServer.Shutdown(shutdownCtx)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		serverStopCtx()
+	}()
+
+	err = httpServer.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
 		log.Fatal("error stopping web server", err)
 	}
+
+	<-serverCtx.Done()
 }
