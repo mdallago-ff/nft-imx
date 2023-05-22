@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/hibiken/asynq"
 	"log"
 	"net/http"
 	"nft/config"
@@ -14,6 +13,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/hibiken/asynq"
 )
 
 func main() {
@@ -67,7 +68,7 @@ func main() {
 	go func() {
 		<-sig
 
-		shutdownCtx, _ := context.WithTimeout(serverCtx, 30*time.Second)
+		shutdownCtx, cancelShutdown := context.WithTimeout(serverCtx, 30*time.Second)
 
 		go func() {
 			<-shutdownCtx.Done()
@@ -85,6 +86,7 @@ func main() {
 		}
 
 		serverStopCtx()
+		cancelShutdown()
 	}()
 
 	err = httpServer.ListenAndServe()

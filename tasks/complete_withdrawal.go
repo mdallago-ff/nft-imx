@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hibiken/asynq"
 	"log"
+
+	"github.com/hibiken/asynq"
 )
 
 const (
