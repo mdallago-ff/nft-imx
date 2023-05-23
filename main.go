@@ -43,7 +43,9 @@ func main() {
 
 	defer imxClient.Close()
 
-	newServer := server.NewServer(settings, newDB, imxClient)
+	asyncClient := asynq.NewClient(asynq.RedisClientOpt{Addr: settings.RedisUrl})
+
+	newServer := server.NewServer(settings, newDB, imxClient, asyncClient)
 	newServer.Configure()
 
 	httpServer := &http.Server{Addr: ":" + settings.Port, Handler: newServer.Router}
@@ -56,7 +58,7 @@ func main() {
 	)
 
 	mux := asynq.NewServeMux()
-	mux.HandleFunc(tasks.TypeCompleteWithdrawal, tasks.HandleCompleteWithdrawalTask)
+	mux.Handle(tasks.TypeCompleteWithdrawal, tasks.NewCompleteWithdrawalProcessor(imxClient, newDB))
 
 	if err := asynqServer.Start(mux); err != nil {
 		log.Fatalf("could not run asynq server: %v", err)

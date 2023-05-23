@@ -4,7 +4,11 @@ import (
 	"errors"
 	"net/http"
 	"nft/imx"
+	"nft/tasks"
 	"strconv"
+	"time"
+
+	"github.com/hibiken/asynq"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/go-chi/oauth"
@@ -56,6 +60,26 @@ func (h *Handler) CreateWithdrawal(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	completeTask, err := tasks.NewCompleteWithdrawalTask(withdrawalID, userID)
+	if err != nil {
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	completeTaskInfo, err := h.asynqClient.Enqueue(completeTask, asynq.ProcessIn(24*time.Hour))
+	if err != nil {
+		err = render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			log.Error("error rendering response", err)
+		}
+		return
+	}
+
+	log.Trace("Task scheduled", "taskID", completeTaskInfo.ID)
 
 	render.Status(r, http.StatusCreated)
 	err = render.Render(w, r, NewWithdrawalResponse(withdrawalID))

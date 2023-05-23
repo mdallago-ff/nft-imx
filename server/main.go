@@ -8,6 +8,8 @@ import (
 	"nft/imx"
 	"time"
 
+	"github.com/hibiken/asynq"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/oauth"
@@ -15,14 +17,15 @@ import (
 )
 
 type Server struct {
-	Router *chi.Mux
-	config *config.Settings
-	db     *db.DB
-	imx    imx.Client
+	Router      *chi.Mux
+	config      *config.Settings
+	db          *db.DB
+	imx         imx.Client
+	asynqClient *asynq.Client
 }
 
-func NewServer(config *config.Settings, db *db.DB, imx imx.Client) *Server {
-	return &Server{chi.NewRouter(), config, db, imx}
+func NewServer(config *config.Settings, db *db.DB, imx imx.Client, asynqClient *asynq.Client) *Server {
+	return &Server{chi.NewRouter(), config, db, imx, asynqClient}
 }
 
 func (s *Server) Configure() {
@@ -32,7 +35,7 @@ func (s *Server) Configure() {
 	s.Router.Use(middleware.URLFormat)
 	s.Router.Use(render.SetContentType(render.ContentTypeJSON))
 
-	newHandler := handlers.NewHandler(s.db, s.imx)
+	newHandler := handlers.NewHandler(s.db, s.imx, s.asynqClient)
 
 	bearerServer := oauth.NewBearerServer(
 		s.config.AuthSecret,

@@ -11,6 +11,8 @@ import (
 	"nft/test"
 	"testing"
 
+	"github.com/hibiken/asynq"
+
 	"github.com/go-chi/oauth"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
@@ -47,7 +49,8 @@ func (s *UnitTestSuite) SetupTest() {
 	s.migrations = migrations
 	settings := config.GetConfig()
 	settings.DebugMode = true
-	s.server = NewServer(settings, newDB, ImxDummy{})
+	asyncClient := asynq.NewClient(asynq.RedisClientOpt{Addr: settings.RedisUrl})
+	s.server = NewServer(settings, newDB, ImxDummy{}, asyncClient)
 	s.server.Configure()
 }
 
