@@ -7,3 +7,4 @@ starkprivatekey: "XXXXXXXXXXXXXXXXXX"
 dsn: "host=localhost user=postgres password=postgres dbname=nft port=5432 sslmode=disable"
 projectid: 1234
 tokendurationseconds: 120
+redisurl: 127.0.0.1:6379

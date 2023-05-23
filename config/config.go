@@ -16,6 +16,7 @@ type Settings struct {
 	DSN                  string `default:"" env:"DSN"`
 	ProjectID            int32  `default:"0" env:"PROJECT_ID"`
 	TokenDurationSeconds int64  `default:"120" env:"TOKEN_DURATION_SECONDS"`
+	RedisUrl             string `default:"127.0.0.1:6379" env:"REDIS_URL"`
 }
 
 var config = Settings{}

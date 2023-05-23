@@ -48,11 +48,10 @@ func main() {
 
 	httpServer := &http.Server{Addr: ":" + settings.Port, Handler: newServer.Router}
 
-	// Server run context
 	serverCtx, serverStopCtx := context.WithCancel(context.Background())
 
 	asynqServer := asynq.NewServer(
-		asynq.RedisClientOpt{Addr: "127.0.0.1:6379"},
+		asynq.RedisClientOpt{Addr: settings.RedisUrl},
 		asynq.Config{},
 	)
 
