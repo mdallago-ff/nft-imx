@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/carlmjohnson/versioninfo"
 	"log"
 	"net/http"
 	"nft/config"
@@ -23,6 +24,7 @@ func main() {
 
 	settings := config.GetConfig()
 
+	log.Printf("Version: %s", versioninfo.Short())
 	log.Printf("Port: %s", settings.Port)
 	log.Printf("DebugMode: %t", settings.DebugMode)
 
