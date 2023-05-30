@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"nft/config"
@@ -54,7 +55,14 @@ func main() {
 
 	asynqServer := asynq.NewServer(
 		asynq.RedisClientOpt{Addr: settings.RedisUrl},
-		asynq.Config{},
+		asynq.Config{
+			IsFailure: func(err error) bool {
+				// this type of error will not count as an error in asynq and will not affect retry count
+				// the task will be scheduled again for execution.
+				var notReady imx.WithdrawalNotReadyError
+				return !errors.As(err, &notReady)
+			},
+		},
 	)
 
 	mux := asynq.NewServeMux()
