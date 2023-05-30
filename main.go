@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/carlmjohnson/versioninfo"
 	"log"
 	"net/http"
 	"nft/config"
@@ -15,6 +14,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/carlmjohnson/versioninfo"
 
 	"github.com/hibiken/asynq"
 )
